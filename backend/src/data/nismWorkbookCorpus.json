@@ -1,0 +1,30 @@
+[
+  {
+    "id": "nism-viii-ch5-mtm",
+    "source": "NISM-Series-VIII: Equity Derivatives — Chapter 5 (Clearing & Settlement)",
+    "topic": "Initial Margin & Daily Mark-to-Market (MTM) Settlement",
+    "keywords": ["margin", "mtm", "mark-to-market", "span", "exposure", "maintenance", "futures", "settlement", "t+1", "square-off", "margin call", "leverage"],
+    "excerpt": "Clearing corporations collect Initial Margin (SPAN margin covering 99% VaR over a 1-day/2-day horizon plus Exposure Margin) upfront before a futures trade is accepted. All open futures positions are Marked-to-Market (MTM) daily against the Daily Settlement Price (closing weighted average price of the last 30 minutes). MTM losses must be paid in cash on a T+1 basis (and brokers block/debit intraday via peak-margin norms). If margin falls below maintenance requirements, the broker is obligated to issue a margin call or square off the position regardless of the trader's view on expiry."
+  },
+  {
+    "id": "nism-viii-ch4-circuit",
+    "source": "NISM-Series-VIII & SEBI Circular — Market-Wide Circuit Breakers",
+    "topic": "Index-Based Market-Wide Circuit Breakers & Trading Halts",
+    "keywords": ["circuit", "breaker", "halt", "10%", "15%", "20%", "sensex", "nifty", "liquidity", "frozen", "reopen", "45 minutes", "short", "margin spike"],
+    "excerpt": "SEBI mandates an index-based market-wide circuit breaker system triggered at 10%, 15%, and 20% movement in either Sensex or Nifty 50 (whichever breaches first). A 10% move before 1:00 PM triggers a 45-minute trading halt across all equity and equity-derivative markets nationwide. During the halt, no orders can be executed to exit or hedge open positions; margins remain marked against the last traded price until trading resumes, when gap re-pricing and volatility spikes can sharply increase required SPAN margin."
+  },
+  {
+    "id": "nism-viii-ch4-stoploss",
+    "source": "NISM-Series-VIII: Equity Derivatives — Chapter 4 (Trading Mechanism)",
+    "topic": "Stop-Loss (SL / SL-M) Order Mechanics & Overnight Gap Risk",
+    "keywords": ["stop-loss", "stoploss", "stop loss", "sl-m", "trigger", "gap", "overnight", "slippage", "opening", "circuit", "disclosure", "execution", "fill", "limit"],
+    "excerpt": "A Stop-Loss Market (SL-M) order remains passive in the exchange order book until the market price reaches or crosses the trigger price, at which point it converts into a regular market order. A stop-loss trigger NEVER guarantees execution at the trigger price. If adverse corporate disclosures or macro shocks occur after market close, the security may gap open far below the trigger price (or lock in a lower circuit with zero buyers), causing the stop-loss to execute at the lower available market price or remain unfilled."
+  },
+  {
+    "id": "nism-viii-ch3-options",
+    "source": "NISM-Series-VIII: Equity Derivatives — Chapter 3 (Options)",
+    "topic": "Option Buyer vs Option Writer Payoff Asymmetry & Margin",
+    "keywords": ["option", "call", "put", "premium", "strike", "writer", "seller", "buyer", "asymmetry", "unlimited", "breakeven", "expiry", "intrinsic", "time value", "theta"],
+    "excerpt": "An option buyer pays an upfront premium and holds a right without obligation; maximum loss is strictly capped at the premium paid. An option writer (seller) collects the premium upfront but carries an obligation upon assignment: a naked call writer faces theoretically unlimited loss if the underlying rallies sharply, and a put writer faces substantial downside down to zero. Consequently, option writers must post full SPAN + Exposure margins just like futures traders and face daily MTM/margin calls."
+  }
+]

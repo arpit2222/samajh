@@ -1,0 +1,21 @@
+{
+  "network": "polygon-amoy",
+  "chainId": 80002,
+  "address": "",
+  "abi": [
+    "function name() view returns (string)",
+    "function symbol() view returns (string)",
+    "function owner() view returns (address)",
+    "function mint(address to, string credentialId, bytes32 verificationHash) returns (uint256)",
+    "function getCredential(string credentialId) view returns (uint256 tokenId, address holder, bytes32 verificationHash, uint256 updatedAt)",
+    "function ownerOf(uint256 tokenId) view returns (address)",
+    "function balanceOf(address holder) view returns (uint256)",
+    "function credentialIdOf(uint256 tokenId) view returns (string)",
+    "function approve(address to, uint256 tokenId)",
+    "function setApprovalForAll(address operator, bool approved)",
+    "function transferFrom(address from, address to, uint256 tokenId)",
+    "function safeTransferFrom(address from, address to, uint256 tokenId)",
+    "event CredentialMinted(uint256 indexed tokenId, address indexed to, string credentialId, bytes32 verificationHash)",
+    "event CredentialUpdated(uint256 indexed tokenId, address indexed holder, string credentialId, bytes32 verificationHash)"
+  ]
+}

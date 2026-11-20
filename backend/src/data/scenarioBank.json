@@ -1,0 +1,37 @@
+[
+  {
+    "concept_tag": "circuit_breaker_margin_risk",
+    "event": "Sensex/Nifty COVID lower-circuit halt",
+    "date": "2020-03-23",
+    "what_happened": "Sensex fell 3,934.72 points (13.15%) to close at 25,981.24; Nifty fell 1,135.20 points (12.98%) to close at 7,610.25. Trading was halted for 45 minutes after the Sensex hit its 10% lower circuit — the second such halt that month.",
+    "correct_reasoning_chain": "A trading halt means you cannot exit or add to a position while it's in effect — margin stays marked against the last traded price, so an open short position's margin requirement can spike the moment trading resumes, with no chance to react during the halt itself."
+  },
+  {
+    "concept_tag": "overnight_gap_stoploss_risk",
+    "event": "IndusInd Bank derivatives accounting-discrepancy disclosure",
+    "date": "2025-03-10",
+    "what_happened": "IndusInd Bank disclosed a derivatives accounting discrepancy on March 10, 2025. The stock opened at a 20% lower circuit the next day and fell 27% intraday to close at ₹656.80, losing nearly ₹20,000 crore in market cap in one session.",
+    "correct_reasoning_chain": "A stop-loss order does nothing when a stock gaps straight through it at the open — the order fills at whatever price is available once trading resumes, not at your stop price. Disclosure-driven gaps are exactly where 'I had a stop-loss' gives false confidence."
+  },
+  {
+    "concept_tag": "event_volatility_option_writing_risk",
+    "event": "Lok Sabha Election Results Volatility Shock",
+    "date": "2024-06-04",
+    "what_happened": "As Lok Sabha election vote counts diverged sharply from exit polls, Sensex plunged 4,389.73 points (-5.74%) to close at 72,079.05 (intraday low 70,234.43) and Nifty 50 fell 1,379.40 points (-5.93%) to close at 21,884.50 (intraday low 21,281.45), while India VIX surged past 28 intraday.",
+    "correct_reasoning_chain": "An option writer who sold naked puts or straddles ahead of a binary event faces both rapid directional delta losses and an implied volatility (vega) explosion at the same time. Margin requirements expand sharply intraday while option premiums multiply, forcing broker square-offs at peak panic lows even if the index partially recovers by close."
+  },
+  {
+    "concept_tag": "regulatory_moratorium_liquidity_risk",
+    "event": "Yes Bank RBI Moratorium Collapse",
+    "date": "2020-03-06",
+    "what_happened": "After the RBI placed Yes Bank under a moratorium late on March 5, 2020 and capped depositor withdrawals at ₹50,000, Yes Bank shares plunged as much as 85% intraday on the NSE on March 6, 2020, touching lows around ₹5.65.",
+    "correct_reasoning_chain": "In an extreme regulatory or solvency shock, past price support and normal daily volatility ranges become meaningless. Leveraged longs, naked put writers, and traders using the stock as pledged margin collateral suffer near-total capital wipeout simultaneously, and liquidity dries up so positions cannot be exited anywhere near prior trading levels."
+  },
+  {
+    "concept_tag": "general_market_risk",
+    "event": "Sudden Market Volatility & Liquidity Shock (General Fallback)",
+    "date": "General Market Stress",
+    "what_happened": "During a sudden macro or news-driven volatility spike on Indian exchanges, bid-ask spreads widen dramatically, order-book depth thins out, and intraday price swings exceed normal historical averages within minutes while brokers enforce peak-margin rules.",
+    "correct_reasoning_chain": "When volatility spikes and liquidity thins, market orders suffer heavy slippage, leverage magnifies mark-to-market drawdowns against posted margin, and a trader cannot assume smooth exits at screen prices. Risk must be sized upfront assuming adverse execution and margin expansion rather than calm-market averages."
+  }
+]
