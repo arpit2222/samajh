@@ -5,6 +5,7 @@ import {
   signInWithPopup,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  signInAnonymously,
   signOut,
   onAuthStateChanged,
 } from "@firebase/auth";
@@ -32,12 +33,55 @@ function getFirebaseAuthInstance() {
 
 function normalizeUser(fbUser) {
   if (!fbUser) return null;
+  const isGuest = Boolean(fbUser.isAnonymous);
   return {
     uid: fbUser.uid,
-    displayName: fbUser.displayName || fbUser.email?.split("@")[0] || "Learner",
+    displayName: isGuest
+      ? "Guest"
+      : fbUser.displayName || fbUser.email?.split("@")[0] || "Learner",
     email: fbUser.email || "",
     photoURL: fbUser.photoURL || "",
-    isGuest: false,
+    isGuest,
+  };
+}
+
+/**
+ * Returns the real Firebase ID token for the currently signed-in (or anonymous) user.
+ * Returns null if no Firebase user is active.
+ */
+export async function getCurrentIdToken(forceRefresh = false) {
+  const auth = getFirebaseAuthInstance();
+  if (!auth?.currentUser) return null;
+  try {
+    return await auth.currentUser.getIdToken(forceRefresh);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Guest / Anonymous sign-in:
+ * Uses Firebase Anonymous Auth when enabled (producing a real verifiable ID token),
+ * falling back cleanly to a local unauthenticated Guest session if Anonymous Auth
+ * is not yet enabled in the Firebase console.
+ */
+export async function signInAsGuest() {
+  const auth = getFirebaseAuthInstance();
+  if (auth) {
+    try {
+      const cred = await signInAnonymously(auth);
+      return { ...normalizeUser(cred.user), role: "trader", isGuest: true };
+    } catch {
+      // Anonymous provider may not be enabled in Firebase Console — fall back cleanly
+    }
+  }
+  return {
+    uid: null,
+    displayName: "Guest",
+    email: "",
+    photoURL: "",
+    role: "trader",
+    isGuest: true,
   };
 }
 

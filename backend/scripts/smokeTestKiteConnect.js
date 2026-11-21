@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { initDatabase, getBrokerConnection } from "../src/db/firestore.js";
+import { setIdTokenVerifierForTests } from "../src/firebaseAdmin.js";
 import { createKiteRouter } from "../src/routes/kite.js";
 import {
   assertReadOnlyKiteEndpoint,
@@ -120,7 +121,11 @@ async function runKiteProof() {
   await initDatabase();
 
   const uid = "trader_kite_001";
-  const headers = { "x-firebase-uid": uid };
+  setIdTokenVerifierForTests(async (tok) => {
+    if (tok === "tok_kite_001") return { uid, email: "kite@test.in" };
+    throw new Error("Invalid token");
+  });
+  const headers = { authorization: "Bearer tok_kite_001" };
   const rawAccessToken = "kite_live_access_token_SECRET_999";
   const refreshedAccessToken = "kite_refreshed_access_token_SECRET_888";
   const rawRefreshToken = "kite_refresh_token_SECRET_777";

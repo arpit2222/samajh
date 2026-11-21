@@ -5,6 +5,7 @@ import { runSamajhPipeline } from "../agents/samajhPipeline.js";
 import { createSession } from "../db/firestore.js";
 import { resolveLanguage } from "../tools/languages.js";
 import { resolveNismModule } from "../tools/nismModules.js";
+import { optionalAuth } from "../middleware/authGuard.js";
 
 const router = Router();
 
@@ -39,7 +40,7 @@ const upload = multer({
  * persists the session to Firestore (MongoDB-compatible), and returns
  * { sessionId, concept, analogy, grounding, adk_trace }.
  */
-router.post("/", upload.single("image"), async (req, res, next) => {
+router.post("/", optionalAuth, upload.single("image"), async (req, res, next) => {
   try {
     let ingestInput = {};
 
@@ -74,8 +75,8 @@ router.post("/", upload.single("image"), async (req, res, next) => {
       nismModule: modConfig.id,
     });
 
-    const uid = req.headers["x-firebase-uid"]?.toString().trim() || req.body?.uid || null;
-    const userEmail = req.headers["x-firebase-email"]?.toString().trim() || null;
+    const uid = req.user?.uid || null;
+    const userEmail = req.user?.email || null;
     const externalUserRef =
       typeof req.body?.external_user_ref === "string"
         ? req.body.external_user_ref.trim() || null

@@ -7,21 +7,16 @@ const router = Router();
 
 /**
  * POST /api/users/sync
- * Syncs a signed-in user's profile and role ('trader' | 'employer') into Firestore `users`.
+ * Syncs a Firebase-verified user's profile and role ('trader' | 'employer') into Firestore `users`.
+ * Identity (uid, email, displayName, photoURL) is derived strictly from the verified Firebase ID token.
  */
-router.post("/sync", async (req, res, next) => {
+router.post("/sync", requireAuth, async (req, res, next) => {
   try {
-    const uid =
-      req.body?.uid?.toString().trim() || req.headers["x-firebase-uid"]?.toString().trim();
-    if (!uid) {
-      return res.status(400).json({ error: "uid is required." });
-    }
-
     const user = await upsertUser({
-      uid,
-      displayName: req.body?.displayName || "",
-      email: req.body?.email || "",
-      photoURL: req.body?.photoURL || "",
+      uid: req.user.uid,
+      displayName: req.user.displayName || "",
+      email: req.user.email || "",
+      photoURL: req.user.photoURL || "",
       role: req.body?.role === "employer" ? "employer" : "trader",
     });
 

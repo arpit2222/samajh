@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { initDatabase, createSession } from "../src/db/firestore.js";
+import { setIdTokenVerifierForTests } from "../src/firebaseAdmin.js";
 import discussionRouter from "../src/routes/discussion.js";
 
 function runDiscussionRoute({ method = "GET", path, headers = {}, body = {} }) {
@@ -44,11 +45,17 @@ async function runDiscussionProof() {
   const unattemptedUid = "trader_unattempted_001";
   const attemptedUid = "trader_attempted_002";
 
+  setIdTokenVerifierForTests(async (token) => {
+    if (token === "tok_unattempted") return { uid: unattemptedUid, email: "u1@test.in" };
+    if (token === "tok_attempted") return { uid: attemptedUid, email: "u2@test.in" };
+    throw new Error("Invalid token");
+  });
+
   // 1. User who has NOT attempted "circuit_breaker_margin_risk" is blocked with 403 locked
   const lockedGet = await runDiscussionRoute({
     method: "GET",
     path: `/${subtopic}?page=1&limit=10`,
-    headers: { "x-firebase-uid": unattemptedUid },
+    headers: { authorization: "Bearer tok_unattempted" },
   });
   assert.equal(lockedGet.status, 403, "Unattempted user must receive 403 on GET");
   assert.equal(lockedGet.body.locked, true, "Response must indicate locked: true");
@@ -56,7 +63,7 @@ async function runDiscussionProof() {
   const lockedPost = await runDiscussionRoute({
     method: "POST",
     path: `/${subtopic}/post`,
-    headers: { "x-firebase-uid": unattemptedUid },
+    headers: { authorization: "Bearer tok_unattempted" },
     body: { text: "Trying to post before attempting the subtopic verification." },
   });
   assert.equal(lockedPost.status, 403, "Unattempted user must receive 403 on POST");
@@ -72,7 +79,7 @@ async function runDiscussionProof() {
   const unlockedGet = await runDiscussionRoute({
     method: "GET",
     path: `/${subtopic}?page=1&limit=10`,
-    headers: { "x-firebase-uid": attemptedUid },
+    headers: { authorization: "Bearer tok_attempted" },
   });
   assert.equal(unlockedGet.status, 200, "Attempted user must unlock the circle with 200");
   assert.deepEqual(unlockedGet.body.posts, []);
@@ -81,7 +88,7 @@ async function runDiscussionProof() {
   const tickerRes = await runDiscussionRoute({
     method: "POST",
     path: `/${subtopic}/post`,
-    headers: { "x-firebase-uid": attemptedUid },
+    headers: { authorization: "Bearer tok_attempted" },
     body: {
       text: "I got trapped in INDUSINDBK futures when the lower circuit froze bids.",
     },
@@ -92,7 +99,7 @@ async function runDiscussionProof() {
   const contractRes = await runDiscussionRoute({
     method: "POST",
     path: `/${subtopic}/post`,
-    headers: { "x-firebase-uid": attemptedUid },
+    headers: { authorization: "Bearer tok_attempted" },
     body: {
       text: "Shorting NIFTY 24000 CE before an event can trigger sudden margin spikes.",
     },
@@ -103,7 +110,7 @@ async function runDiscussionProof() {
   const rupeeRes = await runDiscussionRoute({
     method: "POST",
     path: `/${subtopic}/post`,
-    headers: { "x-firebase-uid": attemptedUid },
+    headers: { authorization: "Bearer tok_attempted" },
     body: {
       text: "My mark-to-market shortfall crossed ₹45,000 before the broker squared off.",
     },
@@ -114,7 +121,7 @@ async function runDiscussionProof() {
   const imageRes = await runDiscussionRoute({
     method: "POST",
     path: `/${subtopic}/post`,
-    headers: { "x-firebase-uid": attemptedUid },
+    headers: { authorization: "Bearer tok_attempted" },
     body: {
       text: "Here is my pattern diagram explaining margin waterfall.",
       image: "data:image/png;base64,iVBORw0KGgo=",
@@ -126,7 +133,7 @@ async function runDiscussionProof() {
   const afterRejections = await runDiscussionRoute({
     method: "GET",
     path: `/${subtopic}?page=1&limit=10`,
-    headers: { "x-firebase-uid": attemptedUid },
+    headers: { authorization: "Bearer tok_attempted" },
   });
   assert.equal(afterRejections.body.total_posts, 0, "Rejected posts must never be stored");
 
@@ -134,7 +141,7 @@ async function runDiscussionProof() {
   const validRes = await runDiscussionRoute({
     method: "POST",
     path: `/${subtopic}/post`,
-    headers: { "x-firebase-uid": attemptedUid },
+    headers: { authorization: "Bearer tok_attempted" },
     body: {
       text: "The key realization for me was that during a lower circuit halt, limit orders cannot fill while MTM obligations still accumulate against collateral.",
     },
@@ -148,7 +155,7 @@ async function runDiscussionProof() {
   const reportRes = await runDiscussionRoute({
     method: "POST",
     path: `/${subtopic}/posts/${postId}/report`,
-    headers: { "x-firebase-uid": attemptedUid },
+    headers: { authorization: "Bearer tok_attempted" },
   });
   assert.equal(reportRes.status, 200, "Report endpoint must return 200");
   assert.equal(reportRes.body.post.flagged, true, "Reported post must have flagged: true");
@@ -159,8 +166,9 @@ async function runDiscussionProof() {
   const finalGet = await runDiscussionRoute({
     method: "GET",
     path: `/${subtopic}?page=1&limit=10`,
-    headers: { "x-firebase-uid": attemptedUid },
+    headers: { authorization: "Bearer tok_attempted" },
   });
+  setIdTokenVerifierForTests(null);
   assert.equal(finalGet.status, 200);
   assert.equal(finalGet.body.total_posts, 1, "Flagged post must NOT be auto-deleted");
   assert.equal(finalGet.body.posts[0].id, postId);

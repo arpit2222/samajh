@@ -1,3 +1,5 @@
+import { getCurrentIdToken } from "./lib/firebase.js";
+
 const API_BASE = (
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080"
 ).replace(/\/$/, "");
@@ -10,19 +12,17 @@ export function setApiUser(user) {
   activeUserContext = user && user.uid ? user : null;
 }
 
-function buildHeaders(extra = {}) {
+async function buildHeaders(extra = {}) {
   const headers = { ...extra };
-  if (activeUserContext?.uid) {
-    headers["X-Firebase-Uid"] = activeUserContext.uid;
-  }
-  if (activeUserContext?.email) {
-    headers["X-Firebase-Email"] = activeUserContext.email;
+  // Never send raw X-Firebase-Uid — always authenticate with a verified Firebase ID Bearer token
+  if (!headers.Authorization && !headers.authorization) {
+    const idToken = await getCurrentIdToken();
+    if (idToken) {
+      headers.Authorization = `Bearer ${idToken}`;
+    }
   }
   if (activeUserContext?.role) {
     headers["X-User-Role"] = activeUserContext.role;
-  }
-  if (activeUserContext?.displayName) {
-    headers["X-User-Name"] = activeUserContext.displayName;
   }
   return headers;
 }
@@ -31,9 +31,10 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = DEFAULT_TIMEOUT_M
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
+    const headers = await buildHeaders(options.headers);
     return await fetch(url, {
       ...options,
-      headers: buildHeaders(options.headers),
+      headers,
       signal: controller.signal,
     });
   } catch (err) {

@@ -6,6 +6,7 @@ import {
   diagnoseTradePatternsCapability,
   findPiiViolation,
 } from "../services/capabilities.js";
+import { optionalAuth } from "../middleware/authGuard.js";
 
 export { findPiiViolation };
 
@@ -30,7 +31,7 @@ router.post("/review", async (req, res, next) => {
  * Loop-back endpoint: skips ingestAgent and conceptAgent completely and seeds a
  * fresh Firestore session directly for socraticAgent using `concept_tag`.
  */
-router.post("/start-teachback", async (req, res, next) => {
+router.post("/start-teachback", optionalAuth, async (req, res, next) => {
   try {
     const conceptTag = req.body?.concept_tag?.toString().trim();
     const mapped = CONCEPT_TAG_MAP[conceptTag];
@@ -38,8 +39,8 @@ router.post("/start-teachback", async (req, res, next) => {
       return res.status(400).json({ error: "Unknown concept_tag for teach-back loop-back." });
     }
 
-    const uid = req.headers["x-firebase-uid"]?.toString().trim() || null;
-    const userEmail = req.headers["x-firebase-email"]?.toString().trim() || null;
+    const uid = req.user?.uid || null;
+    const userEmail = req.user?.email || null;
     const externalUserRef =
       typeof req.body?.external_user_ref === "string"
         ? req.body.external_user_ref.trim() || null

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { initDatabase, getBrokerConnection } from "../src/db/firestore.js";
+import { setIdTokenVerifierForTests } from "../src/firebaseAdmin.js";
 import { createAngelRouter } from "../src/routes/angel.js";
 import { assertReadOnlySmartApiEndpoint } from "../src/tools/angelSmartApi.js";
 import {
@@ -116,7 +117,11 @@ async function runAngelProof() {
   await initDatabase();
 
   const uid = "trader_angel_001";
-  const headers = { "x-firebase-uid": uid };
+  setIdTokenVerifierForTests(async (tok) => {
+    if (tok === "tok_angel_001") return { uid, email: "angel@test.in" };
+    throw new Error("Invalid token");
+  });
+  const headers = { authorization: "Bearer tok_angel_001" };
   const rawJwt = "angel_jwt_SECRET_111";
   const refreshedJwt = "angel_jwt_refreshed_SECRET_222";
   const rawRefresh = "angel_refresh_SECRET_333";

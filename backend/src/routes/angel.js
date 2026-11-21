@@ -15,19 +15,9 @@ import {
   logoutAngelSmartApi,
   refreshAngelSmartApiToken,
 } from "../tools/angelSmartApi.js";
+import { optionalAuth, requireAuth } from "../middleware/authGuard.js";
 
 const BROKER_ID = "angel_smartapi";
-
-function requireSignedInUser(req, res) {
-  const uid = req.headers["x-firebase-uid"]?.toString().trim();
-  if (!uid) {
-    res.status(401).json({
-      error: "Sign in with Google or Email to connect your Angel One SmartAPI account.",
-    });
-    return null;
-  }
-  return uid;
-}
 
 export function createAngelRouter({ fetchImpl = globalThis.fetch } = {}) {
   const router = Router();
@@ -36,9 +26,9 @@ export function createAngelRouter({ fetchImpl = globalThis.fetch } = {}) {
    * GET /api/broker/angel/status
    * Returns connection metadata ONLY (never returns tokens, clientcode, MPIN, or TOTP).
    */
-  router.get("/status", async (req, res, next) => {
+  router.get("/status", optionalAuth, async (req, res, next) => {
     try {
-      const uid = req.headers["x-firebase-uid"]?.toString().trim() || null;
+      const uid = req.user?.uid || null;
       const configured = isSmartApiConfigured();
       if (!uid) {
         return res.status(200).json({
@@ -85,10 +75,9 @@ export function createAngelRouter({ fetchImpl = globalThis.fetch } = {}) {
    * stores ONLY AES-256-GCM encrypted jwtToken & refreshToken in Firestore `broker_connections`,
    * and NEVER persists clientcode, password/MPIN, or TOTP.
    */
-  router.post("/connect", async (req, res, next) => {
+  router.post("/connect", requireAuth, async (req, res, next) => {
     try {
-      const uid = requireSignedInUser(req, res);
-      if (!uid) return;
+      const uid = req.user.uid;
 
       if (!isSmartApiConfigured()) {
         return res.status(503).json({
@@ -157,10 +146,9 @@ export function createAngelRouter({ fetchImpl = globalThis.fetch } = {}) {
    * Fetches read-only TradeBook/OrderBook/Holding, handles automatic refreshToken renewal
    * on expired JWT, and runs through the exact same anonymization pipeline as CSV & Zerodha Kite.
    */
-  router.post("/sync", async (req, res, next) => {
+  router.post("/sync", requireAuth, async (req, res, next) => {
     try {
-      const uid = requireSignedInUser(req, res);
-      if (!uid) return;
+      const uid = req.user.uid;
 
       if (!isSmartApiConfigured()) {
         return res.status(503).json({
@@ -251,10 +239,9 @@ export function createAngelRouter({ fetchImpl = globalThis.fetch } = {}) {
    * DELETE /api/broker/angel/disconnect
    * Calls SmartAPI logout and IMMEDIATELY deletes the encrypted token from Firestore.
    */
-  router.delete("/disconnect", async (req, res, next) => {
+  router.delete("/disconnect", requireAuth, async (req, res, next) => {
     try {
-      const uid = requireSignedInUser(req, res);
-      if (!uid) return;
+      const uid = req.user.uid;
 
       const conn = await getBrokerConnection(uid, BROKER_ID);
       let loggedOutAtAngel = false;

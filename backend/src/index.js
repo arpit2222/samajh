@@ -32,6 +32,8 @@ import angelRouter from "./routes/angel.js";
 import mcpRouter from "./routes/mcp.js";
 import { attachLiveTeachbackWebSocket } from "./routes/liveTeachbackWs.js";
 import { startCohortClusteringSchedule } from "./jobs/cohortClusteringJob.js";
+import { initFirebaseAdmin } from "./firebaseAdmin.js";
+import { requireAuth } from "./middleware/authGuard.js";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 8080;
@@ -55,10 +57,7 @@ app.use(
       "Content-Type",
       "Authorization",
       "Mcp-Session-Id",
-      "X-Firebase-Uid",
-      "X-Firebase-Email",
       "X-User-Role",
-      "X-User-Name",
     ],
   })
 );
@@ -84,12 +83,9 @@ app.get("/api/health", async (_req, res) => {
   });
 });
 
-app.get("/api/sessions", async (req, res, next) => {
+app.get("/api/sessions", requireAuth, async (req, res, next) => {
   try {
-    const uid = req.query.uid?.toString().trim() || req.headers["x-firebase-uid"]?.toString().trim();
-    if (!uid) {
-      return res.status(400).json({ error: "uid query parameter or X-Firebase-Uid header is required." });
-    }
+    const uid = req.user.uid;
     const sessions = await listSessionsByUid(uid);
     return res.json({ uid, sessions });
   } catch (err) {
@@ -154,6 +150,7 @@ process.on("uncaughtException", (err) => {
 });
 
 async function start() {
+  initFirebaseAdmin();
   await initDatabase();
   startCohortClusteringSchedule();
   const server = http.createServer(app);

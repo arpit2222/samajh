@@ -16,17 +16,7 @@ import {
   refreshKiteAccessToken,
   revokeKiteSession,
 } from "../tools/kiteConnect.js";
-
-function requireSignedInUser(req, res) {
-  const uid = req.headers["x-firebase-uid"]?.toString().trim();
-  if (!uid) {
-    res.status(401).json({
-      error: "Sign in with Google or Email to connect your Zerodha Kite account.",
-    });
-    return null;
-  }
-  return uid;
-}
+import { optionalAuth, requireAuth } from "../middleware/authGuard.js";
 
 export function createKiteRouter({ fetchImpl = globalThis.fetch } = {}) {
   const router = Router();
@@ -35,9 +25,9 @@ export function createKiteRouter({ fetchImpl = globalThis.fetch } = {}) {
    * GET /api/broker/kite/status
    * Returns connection metadata ONLY (never returns any token or Zerodha PII).
    */
-  router.get("/status", async (req, res, next) => {
+  router.get("/status", optionalAuth, async (req, res, next) => {
     try {
-      const uid = req.headers["x-firebase-uid"]?.toString().trim() || null;
+      const uid = req.user?.uid || null;
       const configured = isKiteConfigured();
       if (!uid) {
         return res.status(200).json({
@@ -81,10 +71,9 @@ export function createKiteRouter({ fetchImpl = globalThis.fetch } = {}) {
    * GET /api/broker/kite/login-url
    * Returns the official Kite Connect v3 login URL (read-only; no write scope).
    */
-  router.get("/login-url", async (req, res, next) => {
+  router.get("/login-url", requireAuth, async (req, res, next) => {
     try {
-      const uid = requireSignedInUser(req, res);
-      if (!uid) return;
+      const uid = req.user.uid;
 
       if (!isKiteConfigured()) {
         return res.status(503).json({
@@ -115,10 +104,9 @@ export function createKiteRouter({ fetchImpl = globalThis.fetch } = {}) {
    * Exchanges Kite's single-use request_token for an access_token server-side,
    * encrypts the token with AES-256-GCM, and stores ONLY the encrypted blob in Firestore.
    */
-  router.post("/exchange", async (req, res, next) => {
+  router.post("/exchange", requireAuth, async (req, res, next) => {
     try {
-      const uid = requireSignedInUser(req, res);
-      if (!uid) return;
+      const uid = req.user.uid;
 
       if (!isKiteConfigured()) {
         return res.status(503).json({
@@ -174,10 +162,9 @@ export function createKiteRouter({ fetchImpl = globalThis.fetch } = {}) {
    * if a refresh_token is available (or flags needs_reconnect on daily expiry), and
    * anonymizes all data identically to tradebookParser.js before returning.
    */
-  router.post("/sync", async (req, res, next) => {
+  router.post("/sync", requireAuth, async (req, res, next) => {
     try {
-      const uid = requireSignedInUser(req, res);
-      if (!uid) return;
+      const uid = req.user.uid;
 
       if (!isKiteConfigured()) {
         return res.status(503).json({
@@ -271,10 +258,9 @@ export function createKiteRouter({ fetchImpl = globalThis.fetch } = {}) {
    * Revokes the active Kite token at DELETE /session/token and IMMEDIATELY deletes
    * the encrypted token document from Firestore.
    */
-  router.delete("/disconnect", async (req, res, next) => {
+  router.delete("/disconnect", requireAuth, async (req, res, next) => {
     try {
-      const uid = requireSignedInUser(req, res);
-      if (!uid) return;
+      const uid = req.user.uid;
 
       const conn = await getBrokerConnection(uid, "zerodha_kite");
       let revokedAtKite = false;

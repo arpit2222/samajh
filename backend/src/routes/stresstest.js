@@ -9,6 +9,7 @@ import {
   updateSession,
 } from "../db/firestore.js";
 import { evaluateAndClearSafeguard } from "../services/safeguardClearance.js";
+import { optionalAuth } from "../middleware/authGuard.js";
 
 const router = Router();
 
@@ -33,7 +34,7 @@ function buildPromptQuestion(conceptTag) {
  * Mode 1: { sessionId } -> retrieves matched curated scenario from Firestore `scenarios`
  * Mode 2: { sessionId, user_reasoning } -> grades via ADK SequentialAgent + BuiltInCodeExecutor
  */
-router.post("/", async (req, res, next) => {
+router.post("/", optionalAuth, async (req, res, next) => {
   try {
     const { sessionId, user_reasoning, userReasoning } = req.body || {};
     const reasoningInput =
@@ -101,7 +102,7 @@ router.post("/", async (req, res, next) => {
       typeof session.examinerScore === "number" ? session.examinerScore : result.stress_score;
     const combinedMasteryScore = Math.round(examinerScore * 0.5 + result.stress_score * 0.5);
 
-    const uid = req.headers["x-firebase-uid"]?.toString().trim() || session.uid || null;
+    const uid = req.user?.uid || session.uid || null;
 
     await updateSession(sessionId, {
       uid,
@@ -173,7 +174,7 @@ router.get("/multi", async (_req, res, next) => {
  * Grades every scenario in the randomized gauntlet via the same ADK StressTestAgent
  * and returns a composite score + per-scenario breakdown.
  */
-router.post("/multi", async (req, res, next) => {
+router.post("/multi", optionalAuth, async (req, res, next) => {
   try {
     const { answers } = req.body || {};
     if (!Array.isArray(answers) || answers.length === 0) {
@@ -204,7 +205,7 @@ router.post("/multi", async (req, res, next) => {
 
     const weakest = [...results].sort((a, b) => a.stress_score - b.stress_score)[0];
 
-    const uid = req.headers["x-firebase-uid"]?.toString().trim() || null;
+    const uid = req.user?.uid || null;
     const isGuest = !uid;
     const scenarioSetId =
       typeof req.body?.scenario_set_id === "string" && req.body.scenario_set_id.trim()

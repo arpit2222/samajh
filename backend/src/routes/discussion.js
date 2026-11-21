@@ -11,8 +11,10 @@ import {
 import { findPiiViolation } from "../services/capabilities.js";
 import { VALID_SAFEGUARD_SUBTOPICS } from "../services/safeguardClearance.js";
 import { CONCEPT_TAG_MAP } from "../agents/tradePostMortemAgent.js";
+import { optionalAuth } from "../middleware/authGuard.js";
 
 const router = Router();
+router.use(optionalAuth);
 
 /**
  * Pattern-level discussion guard:
@@ -100,7 +102,7 @@ router.get("/:weak_subtopic", async (req, res, next) => {
     const subtopic = validateSubtopicParam(req, res);
     if (!subtopic) return;
 
-    const uid = req.headers["x-firebase-uid"]?.toString().trim() || null;
+    const uid = req.user?.uid || null;
     const sessionId = req.query.sessionId?.toString().trim() || null;
 
     const allowed = await hasUserAttemptedSubtopic({ uid, sessionId, weak_subtopic: subtopic });
@@ -134,7 +136,7 @@ router.post("/:weak_subtopic/post", async (req, res, next) => {
     const subtopic = validateSubtopicParam(req, res);
     if (!subtopic) return;
 
-    const uid = req.headers["x-firebase-uid"]?.toString().trim() || null;
+    const uid = req.user?.uid || null;
     const sessionId = req.body?.sessionId?.toString().trim() || null;
 
     const allowed = await hasUserAttemptedSubtopic({ uid, sessionId, weak_subtopic: subtopic });

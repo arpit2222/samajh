@@ -22,7 +22,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { fetchHealth, setApiUser } from "../api.js";
-import { subscribeToAuth, signOutUser } from "../lib/firebase.js";
+import { subscribeToAuth, signOutUser, signInAsGuest } from "../lib/firebase.js";
 import { Badge } from "./ui/badge.jsx";
 import { Button } from "./ui/button.jsx";
 import { Spinner } from "./ui/spinner.jsx";
@@ -228,17 +228,10 @@ export default function SamajhApp() {
     );
   }
 
-  function handleGuestContinue() {
-    const guestUser = {
-      uid: null,
-      displayName: "Guest",
-      email: "",
-      photoURL: "",
-      role: "trader",
-      isGuest: true,
-    };
+  async function handleGuestContinue() {
+    const guestUser = await signInAsGuest();
     setUser(guestUser);
-    setApiUser(null);
+    setApiUser(guestUser.uid ? guestUser : null);
     setTraderView("flow");
     toast.info("Continuing as Guest — anonymous demo session");
   }
