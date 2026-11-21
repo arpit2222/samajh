@@ -242,3 +242,30 @@ export async function startTeachBackFromConceptTag({ concept_tag }) {
   });
   return parseApiResponse(res);
 }
+
+/* --- Prompt 8: Developer API Keys --- */
+
+export function getApiBaseUrl() {
+  return API_BASE;
+}
+
+export async function listDeveloperApiKeys() {
+  const res = await fetchWithTimeout(`${API_BASE}/api/developer/keys`, {}, 10_000);
+  return parseApiResponse(res);
+}
+
+export async function createDeveloperApiKey({ label } = {}) {
+  const res = await fetchWithTimeout(`${API_BASE}/api/developer/keys`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ label }),
+  });
+  return parseApiResponse(res);
+}
+
+export async function revokeDeveloperApiKey(id) {
+  const res = await fetchWithTimeout(`${API_BASE}/api/developer/keys/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+  return parseApiResponse(res);
+}

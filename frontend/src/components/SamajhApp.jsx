@@ -17,6 +17,7 @@ import {
   Briefcase,
   FileSpreadsheet,
   ChevronRight,
+  KeyRound,
 } from "lucide-react";
 import { fetchHealth, setApiUser } from "../api.js";
 import { subscribeToAuth, signOutUser } from "../lib/firebase.js";
@@ -306,6 +307,15 @@ export default function SamajhApp() {
                       <span className="hidden sm:inline">Gauntlet</span>
                     </Button>
                   </>
+                )}
+
+                {!user.isGuest && (
+                  <a href="/developer">
+                    <Button type="button" variant="outline" size="sm" title="Developer API Keys & MCP">
+                      <KeyRound className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">Developer</span>
+                    </Button>
+                  </a>
                 )}
 
                 {/* User Pill */}

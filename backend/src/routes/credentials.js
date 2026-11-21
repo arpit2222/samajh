@@ -16,6 +16,7 @@ import {
   deriveCustodialAddress,
   triggerOnChainAnchorFireAndForget,
 } from "../tools/sbtRelayer.js";
+import { verifyCredentialCapability } from "../services/capabilities.js";
 
 export const credentialRouter = Router();
 export const verifyRouter = Router();
@@ -208,40 +209,12 @@ credentialRouter.get("/:credentialId/onchain-status", async (req, res, next) => 
  */
 verifyRouter.get("/:credentialId", async (req, res, next) => {
   try {
-    const slug = req.params.credentialId?.toString().trim();
-    if (!slug) {
-      return res.status(400).json({ error: "credentialId is required." });
-    }
-
-    const doc = await getCredentialBySlug(slug);
-    if (!doc) {
-      return res.status(404).json({
-        error: "No verifiable credential found for this ID.",
-        verified: false,
-      });
-    }
-
-    const verified = verifyCredentialSignature(doc);
-    return res.status(200).json({
-      verified,
-      credential: {
-        credentialId: doc.credentialId,
-        displayName: doc.displayName || "Verified Candidate",
-        concepts: doc.concepts || [],
-        overall_score: doc.overall_score,
-        verificationHash: doc.verificationHash,
-        updatedAt: doc.updatedAt,
-        isSeedData: Boolean(doc.isSeedData),
-        onchain_status: doc.onchain_status || "unanchored",
-        onchain_network: doc.onchain_network || "polygon-amoy",
-        onchain_holder: doc.onchain_holder || null,
-        txHash: doc.txHash || null,
-        tokenId: doc.tokenId || null,
-        explorerUrl:
-          doc.explorerUrl || (doc.txHash ? `https://amoy.polygonscan.com/tx/${doc.txHash}` : null),
-      },
-    });
+    const result = await verifyCredentialCapability(req.params.credentialId);
+    return res.status(200).json(result);
   } catch (err) {
+    if (err.statusCode === 404) {
+      return res.status(404).json({ error: err.message, verified: false });
+    }
     return next(err);
   }
 });

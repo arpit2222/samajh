@@ -20,6 +20,7 @@ const memoryStore = {
   users: new Map(),
   credentials: new Map(), // keyed by userId
   requisitions: new Map(), // keyed by requisition id
+  apiKeys: new Map(), // keyed by api key id
 };
 
 async function fileExists(filePath) {
@@ -54,6 +55,7 @@ export async function initDatabase() {
       mongoDb = mongoClient.db(dbName);
       mode = "firestore-mongo";
       await seedScenariosIfNeeded();
+      await ensureApiKeyIndexes();
       console.log(`[GCP DB] Connected to Firestore (MongoDB-compatible mode), db="${dbName}"`);
       return { mode };
     } catch (err) {
@@ -476,4 +478,177 @@ export async function listRequisitionsByEmployer(employerId) {
     .filter((r) => r.employerId === employerId)
     .sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
 }
+
+/* ============================================================================
+ * PROMPT 8 COLLECTION: api_keys
+ * Indexed on keyHash (exact-match lookup) and userId (listing user's own keys).
+ * NEVER stores plaintext API keys — only SHA-256 keyHash and 12-char keyPrefix.
+ * ============================================================================ */
+
+async function ensureApiKeyIndexes() {
+  if (mode !== "firestore-mongo" || !mongoDb) return;
+  try {
+    const col = mongoDb.collection("api_keys");
+    await col.createIndex({ keyHash: 1 }, { unique: true });
+    await col.createIndex({ userId: 1 });
+  } catch (err) {
+    // Some Firestore MongoDB-compatible tiers manage indexes via console; don't fail startup
+    console.warn(`[GCP DB] Index check notice on api_keys: ${err.message}`);
+  }
+}
+
+export async function createApiKeyRecord({ id, userId, keyHash, keyPrefix, label }) {
+  const now = new Date().toISOString();
+  const doc = {
+    id,
+    userId,
+    keyHash,
+    keyPrefix,
+    label: label || "Unnamed key",
+    createdAt: now,
+    revokedAt: null,
+    lastUsedAt: null,
+    requestCount: 0,
+  };
+
+  if (mode === "firestore-mongo" && mongoDb) {
+    await mongoDb.collection("api_keys").insertOne({ ...doc });
+  } else if (mode === "firestore-native" && nativeFirestore) {
+    await nativeFirestore.collection("api_keys").doc(id).set(doc);
+  } else {
+    memoryStore.apiKeys.set(id, { ...doc });
+  }
+  return doc;
+}
+
+export async function listApiKeysByUserId(userId) {
+  if (!userId) return [];
+  let rows = [];
+
+  if (mode === "firestore-mongo" && mongoDb) {
+    rows = await mongoDb
+      .collection("api_keys")
+      .find({ userId })
+      .sort({ createdAt: -1 })
+      .toArray();
+  } else if (mode === "firestore-native" && nativeFirestore) {
+    const snap = await nativeFirestore
+      .collection("api_keys")
+      .where("userId", "==", userId)
+      .get();
+    rows = snap.docs
+      .map((d) => d.data())
+      .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+  } else {
+    rows = [...memoryStore.apiKeys.values()]
+      .filter((k) => k.userId === userId)
+      .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+  }
+
+  // Never include keyHash in listed keys
+  return rows.map((k) => ({
+    id: k.id,
+    keyPrefix: k.keyPrefix,
+    label: k.label,
+    createdAt: k.createdAt,
+    lastUsedAt: k.lastUsedAt ?? null,
+    revokedAt: k.revokedAt ?? null,
+    requestCount: Number(k.requestCount || 0),
+  }));
+}
+
+export async function findApiKeyByHash(keyHash) {
+  if (!keyHash) return null;
+
+  if (mode === "firestore-mongo" && mongoDb) {
+    const doc = await mongoDb.collection("api_keys").findOne({ keyHash });
+    if (!doc) return null;
+    const { _id, ...rest } = doc;
+    return rest;
+  }
+
+  if (mode === "firestore-native" && nativeFirestore) {
+    const snap = await nativeFirestore
+      .collection("api_keys")
+      .where("keyHash", "==", keyHash)
+      .limit(1)
+      .get();
+    return snap.empty ? null : snap.docs[0].data();
+  }
+
+  for (const doc of memoryStore.apiKeys.values()) {
+    if (doc.keyHash === keyHash) return doc;
+  }
+  return null;
+}
+
+export async function revokeApiKeyForUser(id, userId) {
+  if (!id || !userId) return { status: "not_found" };
+
+  let existing = null;
+  if (mode === "firestore-mongo" && mongoDb) {
+    const doc = await mongoDb.collection("api_keys").findOne({ id });
+    if (doc) {
+      const { _id, ...rest } = doc;
+      existing = rest;
+    }
+  } else if (mode === "firestore-native" && nativeFirestore) {
+    const snap = await nativeFirestore.collection("api_keys").doc(id).get();
+    if (snap.exists) existing = snap.data();
+  } else {
+    existing = memoryStore.apiKeys.get(id) ?? null;
+  }
+
+  // Identical not_found whether key doesn't exist OR belongs to another user
+  if (!existing || existing.userId !== userId) {
+    return { status: "not_found" };
+  }
+
+  if (existing.revokedAt) {
+    return { status: "already_revoked" };
+  }
+
+  const revokedAt = new Date().toISOString();
+  if (mode === "firestore-mongo" && mongoDb) {
+    await mongoDb.collection("api_keys").updateOne({ id, userId }, { $set: { revokedAt } });
+  } else if (mode === "firestore-native" && nativeFirestore) {
+    await nativeFirestore.collection("api_keys").doc(id).set({ revokedAt }, { merge: true });
+  } else {
+    memoryStore.apiKeys.set(id, { ...existing, revokedAt });
+  }
+
+  return { status: "revoked", id, revokedAt };
+}
+
+export async function recordApiKeyUsage(id) {
+  if (!id) return;
+  const lastUsedAt = new Date().toISOString();
+
+  if (mode === "firestore-mongo" && mongoDb) {
+    await mongoDb
+      .collection("api_keys")
+      .updateOne({ id }, { $set: { lastUsedAt }, $inc: { requestCount: 1 } });
+    return;
+  }
+
+  if (mode === "firestore-native" && nativeFirestore) {
+    const ref = nativeFirestore.collection("api_keys").doc(id);
+    const snap = await ref.get();
+    if (snap.exists) {
+      const prevCount = Number(snap.data()?.requestCount || 0);
+      await ref.set({ lastUsedAt, requestCount: prevCount + 1 }, { merge: true });
+    }
+    return;
+  }
+
+  const existing = memoryStore.apiKeys.get(id);
+  if (existing) {
+    memoryStore.apiKeys.set(id, {
+      ...existing,
+      lastUsedAt,
+      requestCount: Number(existing.requestCount || 0) + 1,
+    });
+  }
+}
+
 

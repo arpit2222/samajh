@@ -21,6 +21,9 @@ import usersRouter from "./routes/users.js";
 import { credentialRouter, verifyRouter } from "./routes/credentials.js";
 import requisitionsRouter from "./routes/requisitions.js";
 import tradeProfileRouter from "./routes/tradeProfile.js";
+import developerRouter from "./routes/developer.js";
+import publicV1Router from "./routes/publicV1.js";
+import mcpRouter from "./routes/mcp.js";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 8080;
@@ -39,10 +42,11 @@ app.use(
       }
       return callback(null, true); // Hackathon demo-friendly CORS; tighten on production Cloud Run
     },
-    methods: ["GET", "POST", "PATCH", "OPTIONS"],
+    methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: [
       "Content-Type",
       "Authorization",
+      "Mcp-Session-Id",
       "X-Firebase-Uid",
       "X-Firebase-Email",
       "X-User-Role",
@@ -106,6 +110,9 @@ app.use("/api/credential", credentialRouter);
 app.use("/api/verify", verifyRouter);
 app.use("/api/requisitions", requisitionsRouter);
 app.use("/api/trade-profile", tradeProfileRouter);
+app.use("/api/developer", developerRouter);
+app.use("/api/public/v1", publicV1Router);
+app.use("/mcp", mcpRouter);
 
 // Centralized JSON error handler (prevents crashes & unhandled rejections)
 app.use((err, _req, res, _next) => {
