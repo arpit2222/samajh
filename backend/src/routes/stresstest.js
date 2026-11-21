@@ -142,6 +142,38 @@ router.post("/", optionalAuth, async (req, res, next) => {
 /**
  * GET /api/stresstest/multi
  * Priority 6: Returns randomized curated scenarios from Firestore `scenarios` bank
+/**
+ * GET /api/stresstest/scenarios
+ * Returns all curated historical Indian market shock scenarios (excluding the generic fallback)
+ * for the interactive Risk Sandbox Shock Explorer.
+ */
+router.get("/scenarios", async (_req, res, next) => {
+  try {
+    const bank = await listScenarios();
+    const historical = bank
+      .filter((s) => s.concept_tag !== "general_market_risk")
+      .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
+
+    return res.status(200).json({
+      total: historical.length,
+      scenarios: historical.map((s) => ({
+        id: s.id || `${s.concept_tag}_${s.date}`,
+        concept_tag: s.concept_tag,
+        event: s.event,
+        date: s.date,
+        what_happened: s.what_happened,
+        correct_reasoning_chain: s.correct_reasoning_chain,
+        source: s.source || null,
+        shock_chart: s.shock_chart || null,
+      })),
+    });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+/**
+ * GET /api/stresstest/multi
  * for the Multi-Scenario Gauntlet test mode.
  */
 router.get("/multi", async (_req, res, next) => {

@@ -466,3 +466,8 @@ export async function fetchMySessions() {
   const res = await fetchWithTimeout(`${API_BASE}/api/sessions`, {}, 10_000);
   return parseApiResponse(res);
 }
+
+export async function fetchHistoricalScenarios() {
+  const res = await fetchWithTimeout(`${API_BASE}/api/stresstest/scenarios`, {}, 10_000);
+  return parseApiResponse(res);
+}

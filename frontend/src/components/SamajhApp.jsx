@@ -20,6 +20,7 @@ import {
   Trophy,
   Clock,
   Sparkles,
+  Sliders,
 } from "lucide-react";
 import { fetchHealth, setApiUser } from "../api.js";
 import { subscribeToAuth, signOutUser, signInAsGuest } from "../lib/firebase.js";
@@ -43,9 +44,11 @@ import TraderProfiler from "../screens/TraderProfiler.jsx";
 import LeaderboardScreen from "../screens/LeaderboardScreen.jsx";
 import DiscussionCircle from "../screens/DiscussionCircle.jsx";
 import SessionHistory from "../screens/SessionHistory.jsx";
+import RiskSandbox from "../screens/RiskSandbox.jsx";
 
 const VALID_TRADER_VIEWS = new Set([
   "flow",
+  "sandbox",
   "profiler",
   "multi",
   "leaderboard",
@@ -399,6 +402,7 @@ export default function SamajhApp() {
               >
                 {[
                   { id: "flow", label: "Verify", icon: Sparkles },
+                  { id: "sandbox", label: "Risk Lab", icon: Sliders },
                   { id: "profiler", label: "Trade Review", icon: FileSpreadsheet },
                   { id: "multi", label: "Gauntlet", icon: Shuffle },
                   { id: "leaderboard", label: "Leaderboard", icon: Trophy },
@@ -520,6 +524,20 @@ export default function SamajhApp() {
                         onSelectRequisition={(req) => setSelectedRequisition(req)}
                       />
                     )
+                  ) : traderView === "sandbox" ? (
+                    <RiskSandbox
+                      onPracticeConcept={(starterText) => {
+                        if (typeof starterText === "string" && starterText.trim()) {
+                          setPrefillCaptureText(starterText);
+                        }
+                        setStep(1);
+                        setSessionData(null);
+                        setExamResult(null);
+                        setStressResult(null);
+                        setTraderView("flow");
+                      }}
+                      onBack={() => setTraderView("flow")}
+                    />
                   ) : traderView === "profiler" ? (
                     <TraderProfiler
                       onBack={() => setTraderView("flow")}
