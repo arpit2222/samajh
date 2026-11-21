@@ -67,10 +67,16 @@ export async function fetchHealth() {
   return parseApiResponse(res);
 }
 
-export async function ingestMaterial({ text, imageBase64, mimeType }) {
+export async function ingestMaterial({
+  text,
+  imageBase64,
+  mimeType,
+  language = "en-IN",
+  module = "series-viii",
+}) {
   const payload = imageBase64
-    ? { imageBase64, mimeType: mimeType || "image/jpeg" }
-    : { text };
+    ? { imageBase64, mimeType: mimeType || "image/jpeg", language, module }
+    : { text, language, module };
 
   const res = await fetchWithTimeout(`${API_BASE}/api/ingest`, {
     method: "POST",
@@ -267,5 +273,190 @@ export async function revokeDeveloperApiKey(id) {
   const res = await fetchWithTimeout(`${API_BASE}/api/developer/keys/${encodeURIComponent(id)}`, {
     method: "DELETE",
   });
+  return parseApiResponse(res);
+}
+
+/* --- Phase 1 Prompt 2: Comprehension Leaderboard --- */
+
+export async function fetchGauntletLeaderboard({
+  scenario_set_id = "nism-viii-gauntlet",
+  limit = 20,
+} = {}) {
+  const params = new URLSearchParams();
+  if (scenario_set_id) params.set("scenario_set_id", scenario_set_id);
+  if (limit) params.set("limit", String(limit));
+  const res = await fetchWithTimeout(
+    `${API_BASE}/api/gauntlet/leaderboard?${params.toString()}`,
+    {},
+    10_000
+  );
+  return parseApiResponse(res);
+}
+
+/* --- Phase 1 Prompt 3: Weak-Subtopic Discussion Circles --- */
+
+export async function fetchDiscussionThread({
+  weak_subtopic,
+  page = 1,
+  limit = 10,
+  sessionId,
+}) {
+  const params = new URLSearchParams();
+  params.set("page", String(page));
+  params.set("limit", String(limit));
+  if (sessionId) params.set("sessionId", sessionId);
+
+  const res = await fetchWithTimeout(
+    `${API_BASE}/api/discussion/${encodeURIComponent(weak_subtopic)}?${params.toString()}`,
+    {},
+    10_000
+  );
+
+  if (res.status === 403) {
+    let data = {};
+    try {
+      data = await res.json();
+    } catch {
+      // ignore parse failure
+    }
+    return {
+      locked: true,
+      weak_subtopic,
+      error:
+        data?.error ||
+        "Attempt this subtopic in Teach-Back or Stress-Test first to unlock its Discussion Circle.",
+    };
+  }
+
+  return parseApiResponse(res);
+}
+
+export async function postToDiscussion({ weak_subtopic, text, sessionId }) {
+  const res = await fetchWithTimeout(
+    `${API_BASE}/api/discussion/${encodeURIComponent(weak_subtopic)}/post`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, sessionId }),
+    }
+  );
+  return parseApiResponse(res);
+}
+
+export async function reportDiscussionPost({ weak_subtopic, postId }) {
+  const res = await fetchWithTimeout(
+    `${API_BASE}/api/discussion/${encodeURIComponent(weak_subtopic)}/posts/${encodeURIComponent(
+      postId
+    )}/report`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    }
+  );
+  return parseApiResponse(res);
+}
+
+/* --- Phase 2 Prompt 4: Zerodha Kite Connect (Read-Only) --- */
+
+export async function fetchKiteStatus() {
+  const res = await fetchWithTimeout(`${API_BASE}/api/broker/kite/status`, {}, 10_000);
+  return parseApiResponse(res);
+}
+
+export async function fetchKiteLoginUrl() {
+  const res = await fetchWithTimeout(`${API_BASE}/api/broker/kite/login-url`, {}, 10_000);
+  return parseApiResponse(res);
+}
+
+export async function exchangeKiteRequestToken(request_token) {
+  const res = await fetchWithTimeout(`${API_BASE}/api/broker/kite/exchange`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ request_token }),
+  });
+  return parseApiResponse(res);
+}
+
+export async function syncKiteTrades() {
+  const res = await fetchWithTimeout(`${API_BASE}/api/broker/kite/sync`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({}),
+  });
+  if (res.status === 401) {
+    let data = {};
+    try {
+      data = await res.json();
+    } catch {
+      // ignore
+    }
+    const err = new Error(data?.error || "Zerodha Kite session expired.");
+    err.needsReconnect = Boolean(data?.needs_reconnect);
+    throw err;
+  }
+  return parseApiResponse(res);
+}
+
+export async function disconnectKite() {
+  const res = await fetchWithTimeout(`${API_BASE}/api/broker/kite/disconnect`, {
+    method: "DELETE",
+  });
+  return parseApiResponse(res);
+}
+
+/* --- Phase 2 Prompt 5: Angel One SmartAPI (Read-Only) --- */
+
+export async function fetchAngelStatus() {
+  const res = await fetchWithTimeout(`${API_BASE}/api/broker/angel/status`, {}, 10_000);
+  return parseApiResponse(res);
+}
+
+export async function connectAngelSmartApi({ clientcode, password, totp }) {
+  const res = await fetchWithTimeout(`${API_BASE}/api/broker/angel/connect`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ clientcode, password, totp }),
+  });
+  return parseApiResponse(res);
+}
+
+export async function syncAngelTrades() {
+  const res = await fetchWithTimeout(`${API_BASE}/api/broker/angel/sync`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({}),
+  });
+  if (res.status === 401) {
+    let data = {};
+    try {
+      data = await res.json();
+    } catch {
+      // ignore
+    }
+    const err = new Error(data?.error || "Angel One SmartAPI session expired.");
+    err.needsReconnect = Boolean(data?.needs_reconnect);
+    throw err;
+  }
+  return parseApiResponse(res);
+}
+
+export async function disconnectAngel() {
+  const res = await fetchWithTimeout(`${API_BASE}/api/broker/angel/disconnect`, {
+    method: "DELETE",
+  });
+  return parseApiResponse(res);
+}
+
+/* --- Phase 2 Prompt 6: Aggregate Cohort Weak-Topic Clustering --- */
+
+export async function fetchEmployerCohortInsights(partnerId = "default") {
+  const params = new URLSearchParams();
+  if (partnerId) params.set("partner_id", partnerId);
+  const res = await fetchWithTimeout(
+    `${API_BASE}/api/requisitions/cohort-insights?${params.toString()}`,
+    {},
+    10_000
+  );
   return parseApiResponse(res);
 }

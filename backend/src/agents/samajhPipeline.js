@@ -32,7 +32,10 @@ class ConceptAdkAgent extends BaseAgent {
     const stages = ctx.session.state.activeStages || [];
     if (!stages.includes("concept")) return;
 
-    const result = await conceptAgent({ raw_text: ctx.session.state.raw_text });
+    const result = await conceptAgent({
+      raw_text: ctx.session.state.raw_text,
+      moduleId: ctx.session.state.nismModule || "series-viii",
+    });
     yield createEvent({
       invocationId: ctx.invocationId,
       author: this.name,
@@ -56,6 +59,8 @@ class SocraticAdkAgent extends BaseAgent {
     const result = await socraticAgent({
       concept: ctx.session.state.concept,
       turns: ctx.session.state.turns || [],
+      language: ctx.session.state.language || "en-IN",
+      moduleId: ctx.session.state.nismModule || "series-viii",
     });
     yield createEvent({
       invocationId: ctx.invocationId,
@@ -79,6 +84,8 @@ class ExaminerAdkAgent extends BaseAgent {
     const result = await examinerAgent({
       concept: ctx.session.state.concept,
       turns: ctx.session.state.turns || [],
+      language: ctx.session.state.language || "en-IN",
+      moduleId: ctx.session.state.nismModule || "series-viii",
     });
     yield createEvent({
       invocationId: ctx.invocationId,

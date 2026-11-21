@@ -20,6 +20,7 @@ import { Input } from "../components/ui/input.jsx";
 import { Badge } from "../components/ui/badge.jsx";
 import { Spinner } from "../components/ui/spinner.jsx";
 import { ErrorBanner } from "../components/ui/error-banner.jsx";
+import CohortInsightsDashboard from "./CohortInsightsDashboard.jsx";
 
 export default function EmployerDashboard({ onSelectRequisition }) {
   const [catalog, setCatalog] = useState([]);
@@ -278,6 +279,9 @@ export default function EmployerDashboard({ onSelectRequisition }) {
           )}
         </CardContent>
       </Card>
+
+      {/* Aggregate-Only Cohort Weak-Topic Clustering Dashboard (Phase 2 Prompt 6) */}
+      <CohortInsightsDashboard partnerId="default" />
     </div>
   );
 }

@@ -1,22 +1,28 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   MessageSquare,
   Send,
-  AlertCircle,
   CheckCircle2,
   ArrowRight,
   Loader2,
   User,
   Bot,
-  RefreshCw,
   Mic,
   MicOff,
   Keyboard,
+  Languages,
+  Radio,
 } from "lucide-react";
 import { toast } from "sonner";
 import { sendTeachBack, examineSession } from "../api.js";
+import { getLanguageConfig } from "../lib/languages.js";
+import {
+  createPcmPlayer,
+  getLiveTeachbackWsUrl,
+  startPcmMicCapture,
+} from "../lib/liveAudioClient.js";
 import { Button } from "../components/ui/button.jsx";
 import {
   Card,
@@ -43,6 +49,7 @@ function TypingDots() {
 }
 
 export default function TeachBackChat({ sessionData, onExamined }) {
+  const langConfig = getLanguageConfig(sessionData?.language);
   const [turns, setTurns] = useState([]);
   const [agentTurns, setAgentTurns] = useState(0);
   const [done, setDone] = useState(false);
@@ -52,28 +59,69 @@ export default function TeachBackChat({ sessionData, onExamined }) {
   const [examining, setExamining] = useState(false);
   const [error, setError] = useState("");
 
-  // Optional Voice Mode with mandatory, always-visible "Switch to typing" fallback
+  // Bidirectional Gemini Live WebSocket Voice Mode with mandatory always-visible typing fallback
   const [inputMode, setInputMode] = useState("typing"); // "typing" | "voice"
-  const [voiceSupported, setVoiceSupported] = useState(false);
-  const [listening, setListening] = useState(false);
-  const recognitionRef = useRef(null);
+  const [liveStatus, setLiveStatus] = useState("idle"); // "idle" | "connecting" | "connected" | "disconnected"
+  const [micActive, setMicActive] = useState(false);
+  const [liveUserTranscript, setLiveUserTranscript] = useState("");
+  const [liveAgentTranscript, setLiveAgentTranscript] = useState("");
+
+  const wsRef = useRef(null);
+  const micHandleRef = useRef(null);
+  const playerRef = useRef(null);
+  const doneRef = useRef(false);
+  const intentionalCloseRef = useRef(false);
 
   const initializedSessionRef = useRef(null);
   const bottomRef = useRef(null);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-      setVoiceSupported(Boolean(SpeechRec));
+    doneRef.current = done;
+  }, [done]);
+
+  const stopMic = useCallback(() => {
+    try {
+      micHandleRef.current?.stop();
+    } catch {
+      // ignore
     }
-    return () => {
-      try {
-        recognitionRef.current?.stop();
-      } catch {
-        // ignore cleanup error
-      }
-    };
+    micHandleRef.current = null;
+    setMicActive(false);
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: "audio_end" }));
+    }
   }, []);
+
+  const closeLiveSession = useCallback(
+    ({ intentional = true } = {}) => {
+      intentionalCloseRef.current = intentional;
+      stopMic();
+      try {
+        playerRef.current?.close();
+      } catch {
+        // ignore
+      }
+      playerRef.current = null;
+      if (wsRef.current) {
+        try {
+          wsRef.current.close();
+        } catch {
+          // ignore
+        }
+        wsRef.current = null;
+      }
+      setLiveStatus("idle");
+      setLiveUserTranscript("");
+      setLiveAgentTranscript("");
+    },
+    [stopMic]
+  );
+
+  useEffect(() => {
+    return () => {
+      closeLiveSession({ intentional: true });
+    };
+  }, [closeLiveSession]);
 
   useEffect(() => {
     if (!sessionData?.sessionId) return;
@@ -110,67 +158,130 @@ export default function TeachBackChat({ sessionData, onExamined }) {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [turns, sending, initializing]);
+  }, [turns, sending, initializing, liveUserTranscript, liveAgentTranscript]);
 
-  function stopVoiceListening() {
-    try {
-      recognitionRef.current?.stop();
-    } catch {
-      // ignore
-    }
-    setListening(false);
+  function openLiveVoiceSession() {
+    if (!sessionData?.sessionId || done) return;
+    closeLiveSession({ intentional: true });
+    setInputMode("voice");
+    setLiveStatus("connecting");
+    setError("");
+    intentionalCloseRef.current = false;
+
+    const wsUrl = getLiveTeachbackWsUrl(sessionData.sessionId);
+    const player = createPcmPlayer(24000);
+    playerRef.current = player;
+
+    const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      setLiveStatus("connected");
+    };
+
+    ws.onmessage = (event) => {
+      let msg;
+      try {
+        msg = JSON.parse(event.data);
+      } catch {
+        return;
+      }
+
+      if (msg.type === "ready") {
+        setLiveStatus("connected");
+        if (Array.isArray(msg.turns) && msg.turns.length > 0) {
+          setTurns(msg.turns);
+        }
+        if (typeof msg.agentTurns === "number") {
+          setAgentTurns(msg.agentTurns);
+        }
+        if (msg.done) {
+          setDone(true);
+          closeLiveSession({ intentional: true });
+        }
+      } else if (msg.type === "audio" && msg.data) {
+        player.enqueueBase64(msg.data);
+      } else if (msg.type === "input_transcript" && msg.text) {
+        setLiveUserTranscript((prev) => `${prev}${msg.text}`);
+      } else if (msg.type === "output_transcript" && msg.text) {
+        setLiveAgentTranscript((prev) => `${prev}${msg.text}`);
+      } else if (msg.type === "interrupted") {
+        player.clear();
+      } else if (msg.type === "turn_complete") {
+        setLiveUserTranscript("");
+        setLiveAgentTranscript("");
+        if (Array.isArray(msg.turns)) {
+          setTurns(msg.turns);
+        }
+        if (typeof msg.agentTurns === "number") {
+          setAgentTurns(msg.agentTurns);
+        }
+        if (msg.done) {
+          setDone(true);
+          stopMic();
+          toast.success("All 3 Live voice turns complete — ready for Examiner scoring");
+        }
+      } else if (msg.type === "error") {
+        toast.error(
+          msg.message ||
+            "Gemini Live voice connection interrupted — switched to typing with your turns preserved."
+        );
+        closeLiveSession({ intentional: true });
+        setInputMode("typing");
+      }
+    };
+
+    ws.onerror = () => {
+      if (!intentionalCloseRef.current && !doneRef.current) {
+        toast.error(
+          "Live voice WebSocket dropped — switched to typing without losing your progress."
+        );
+        closeLiveSession({ intentional: true });
+        setInputMode("typing");
+      }
+    };
+
+    ws.onclose = () => {
+      if (!intentionalCloseRef.current && !doneRef.current) {
+        stopMic();
+        setLiveStatus("disconnected");
+        setInputMode("typing");
+        toast.info("Live voice disconnected — continue seamlessly in Typing Mode.");
+      }
+    };
   }
 
-  function startVoiceListening() {
-    if (typeof window === "undefined") return;
-    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRec) {
-      toast.error("Voice input isn't supported in this browser — switched to typing.");
-      setInputMode("typing");
+  async function toggleMicStream() {
+    if (micActive) {
+      stopMic();
       return;
     }
-
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+      toast.error("Live voice WebSocket is not connected yet.");
+      return;
+    }
     try {
-      const recognition = new SpeechRec();
-      recognition.lang = "en-IN";
-      recognition.continuous = true;
-      recognition.interimResults = true;
-
-      let finalTranscript = userText ? `${userText.trim()} ` : "";
-      recognition.onresult = (event) => {
-        let interim = "";
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const piece = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            finalTranscript += `${piece} `;
-          } else {
-            interim += piece;
+      const handle = await startPcmMicCapture({
+        onPcmChunk: (base64Pcm) => {
+          if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+            wsRef.current.send(
+              JSON.stringify({
+                type: "audio",
+                data: base64Pcm,
+                mimeType: "audio/pcm;rate=16000",
+              })
+            );
           }
-        }
-        setUserText((finalTranscript + interim).trimStart());
-      };
-
-      recognition.onerror = (ev) => {
-        setListening(false);
-        if (ev.error === "not-allowed" || ev.error === "service-not-allowed") {
-          toast.error("Microphone permission blocked — switched to typing.");
-          setInputMode("typing");
-        } else {
-          toast.info("Mic paused — you can edit or switch to typing anytime.");
-        }
-      };
-
-      recognition.onend = () => {
-        setListening(false);
-      };
-
-      recognitionRef.current = recognition;
-      recognition.start();
-      setListening(true);
-    } catch {
-      setListening(false);
+        },
+      });
+      micHandleRef.current = handle;
+      setMicActive(true);
+    } catch (err) {
+      toast.error(
+        `${err.message || "Microphone permission blocked"} — switched to typing.`
+      );
+      closeLiveSession({ intentional: true });
       setInputMode("typing");
-      toast.error("Could not start microphone — switched to typing.");
     }
   }
 
@@ -194,7 +305,7 @@ export default function TeachBackChat({ sessionData, onExamined }) {
 
   async function handleSend(e) {
     e?.preventDefault();
-    stopVoiceListening();
+    stopMic();
     const trimmed = userText.trim();
     if (!trimmed || sending || initializing || done) return;
 
@@ -226,7 +337,7 @@ export default function TeachBackChat({ sessionData, onExamined }) {
   }
 
   async function handleExamine() {
-    stopVoiceListening();
+    closeLiveSession({ intentional: true });
     setError("");
     setExamining(true);
     try {
@@ -255,18 +366,21 @@ export default function TeachBackChat({ sessionData, onExamined }) {
           <Badge variant="default">
             <MessageSquare className="h-3.5 w-3.5" /> Step 3 · Teach-Back Dialogue
           </Badge>
-          <div className="flex items-center gap-2">
-            {voiceSupported && !done && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge variant="outline" className="font-mono text-[11px]">
+              <Languages className="h-3 w-3" /> {langConfig.nativeLabel} ({langConfig.code})
+            </Badge>
+            {!done && (
               <Button
                 type="button"
                 size="sm"
                 variant={inputMode === "voice" ? "default" : "outline"}
                 onClick={() => {
                   if (inputMode === "voice") {
-                    stopVoiceListening();
+                    closeLiveSession({ intentional: true });
                     setInputMode("typing");
                   } else {
-                    setInputMode("voice");
+                    openLiveVoiceSession();
                   }
                 }}
               >
@@ -276,7 +390,7 @@ export default function TeachBackChat({ sessionData, onExamined }) {
                   </>
                 ) : (
                   <>
-                    <Mic className="h-3.5 w-3.5" /> Voice Mode
+                    <Radio className="h-3.5 w-3.5" /> Gemini Live Voice
                   </>
                 )}
               </Button>
@@ -290,8 +404,9 @@ export default function TeachBackChat({ sessionData, onExamined }) {
         </div>
         <CardTitle className="pt-1">Correct the confused novice</CardTitle>
         <CardDescription>
-          Spot the flaw in their restatement and explain <strong className="text-foreground">why</strong>{" "}
-          in plain language. The Examiner scores only your turns.
+          Spot the flaw in their restatement and explain{" "}
+          <strong className="text-foreground">why</strong> in plain language. Use real-time Gemini
+          Live voice or type below — you can switch to typing anytime without losing progress.
         </CardDescription>
 
         <div className="pt-3 space-y-1.5">
@@ -359,6 +474,22 @@ export default function TeachBackChat({ sessionData, onExamined }) {
             );
           })}
 
+          {liveUserTranscript && (
+            <div className="flex justify-end">
+              <div className="max-w-[84%] rounded-2xl rounded-br-sm bg-blue-600/80 text-white px-4 py-2.5 text-sm italic">
+                {liveUserTranscript}
+              </div>
+            </div>
+          )}
+
+          {liveAgentTranscript && (
+            <div className="flex justify-start">
+              <div className="max-w-[84%] rounded-2xl rounded-bl-sm bg-card border border-blue-300 dark:border-blue-500/40 px-4 py-2.5 text-sm text-foreground">
+                {liveAgentTranscript}
+              </div>
+            </div>
+          )}
+
           {sending && (
             <div className="flex items-start gap-2.5">
               <div className="h-8 w-8 rounded-full bg-card border border-border flex items-center justify-center shrink-0 text-blue-600 dark:text-blue-400">
@@ -374,33 +505,38 @@ export default function TeachBackChat({ sessionData, onExamined }) {
           <div ref={bottomRef} />
         </div>
 
-        {/* Composer (Typing or Voice with always-visible typing fallback) */}
+        {/* Composer: Bidirectional Gemini Live Voice bar + always-visible Typing fallback */}
         {!done ? (
           <form onSubmit={handleSend} className="space-y-3">
             {inputMode === "voice" && (
               <div className="rounded-xl border border-blue-200 dark:border-blue-500/35 bg-blue-50/70 dark:bg-blue-500/10 px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2.5 flex-wrap">
                   <Button
                     type="button"
                     size="sm"
-                    variant={listening ? "destructive" : "default"}
-                    onClick={listening ? stopVoiceListening : startVoiceListening}
-                    disabled={sending || initializing}
+                    variant={micActive ? "destructive" : "default"}
+                    onClick={toggleMicStream}
+                    disabled={liveStatus !== "connected" || sending || initializing}
                   >
-                    {listening ? (
+                    {micActive ? (
                       <>
-                        <MicOff className="h-4 w-4" /> Stop Listening
+                        <MicOff className="h-4 w-4" /> Finish Speaking
                       </>
                     ) : (
                       <>
-                        <Mic className="h-4 w-4" /> Tap to Speak (en-IN)
+                        <Mic className="h-4 w-4" />{" "}
+                        {liveStatus === "connecting"
+                          ? "Connecting Live WS..."
+                          : `Speak Live (${langConfig.speechLang})`}
                       </>
                     )}
                   </Button>
                   <span className="text-xs text-muted-foreground">
-                    {listening
-                      ? "Listening... live transcript appears below."
-                      : "Speak your explanation or edit the text below."}
+                    {liveStatus === "connecting"
+                      ? "Opening persistent Gemini Live WebSocket..."
+                      : micActive
+                        ? "Streaming 16kHz PCM audio live — click Finish Speaking when done."
+                        : "Connected to Gemini Live (24kHz audio playback ready)."}
                   </span>
                 </div>
                 <Button
@@ -408,7 +544,7 @@ export default function TeachBackChat({ sessionData, onExamined }) {
                   size="sm"
                   variant="outline"
                   onClick={() => {
-                    stopVoiceListening();
+                    closeLiveSession({ intentional: true });
                     setInputMode("typing");
                   }}
                 >
@@ -425,7 +561,7 @@ export default function TeachBackChat({ sessionData, onExamined }) {
                 disabled={sending || initializing || turns.length === 0}
                 rows={3}
                 className="min-h-[86px] flex-1"
-                placeholder="Point out what they got wrong and explain how the mechanism actually works... (⌘/Ctrl + Enter)"
+                placeholder={langConfig.placeholder}
               />
               <Button
                 type="submit"

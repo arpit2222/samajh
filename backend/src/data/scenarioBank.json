@@ -1,37 +1,479 @@
 [
   {
+    "id": "sc_2020_03_23_covid_circuit_2",
     "concept_tag": "circuit_breaker_margin_risk",
     "event": "Sensex/Nifty COVID lower-circuit halt",
     "date": "2020-03-23",
     "what_happened": "Sensex fell 3,934.72 points (13.15%) to close at 25,981.24; Nifty fell 1,135.20 points (12.98%) to close at 7,610.25. Trading was halted for 45 minutes after the Sensex hit its 10% lower circuit — the second such halt that month.",
-    "correct_reasoning_chain": "A trading halt means you cannot exit or add to a position while it's in effect — margin stays marked against the last traded price, so an open short position's margin requirement can spike the moment trading resumes, with no chance to react during the halt itself."
+    "correct_reasoning_chain": "A trading halt means you cannot exit or add to a position while it's in effect — margin stays marked against the last traded price, so an open short position's margin requirement can spike the moment trading resumes, with no chance to react during the halt itself.",
+    "source": "NSE India / Economic Times (23 Mar 2020)",
+    "shock_chart": {
+      "instrument": "SENSEX / NIFTY 50 · NSE/BSE",
+      "headline_stat": "-13.15% close · 45-min 10% lower-circuit halt",
+      "pre_label": "Prior close 29,916",
+      "threshold_label": "10% Market-Wide Lower Circuit Halt",
+      "shock_label": "Close 25,981 (-3,935 pts)",
+      "points": [[10, 22], [110, 26], [155, 76], [260, 76], [330, 96], [405, 92]],
+      "threshold_y": 76
+    }
   },
   {
+    "id": "sc_2025_03_10_indusind_gap",
     "concept_tag": "overnight_gap_stoploss_risk",
     "event": "IndusInd Bank derivatives accounting-discrepancy disclosure",
     "date": "2025-03-10",
     "what_happened": "IndusInd Bank disclosed a derivatives accounting discrepancy on March 10, 2025. The stock opened at a 20% lower circuit the next day and fell 27% intraday to close at ₹656.80, losing nearly ₹20,000 crore in market cap in one session.",
-    "correct_reasoning_chain": "A stop-loss order does nothing when a stock gaps straight through it at the open — the order fills at whatever price is available once trading resumes, not at your stop price. Disclosure-driven gaps are exactly where 'I had a stop-loss' gives false confidence."
+    "correct_reasoning_chain": "A stop-loss order does nothing when a stock gaps straight through it at the open — the order fills at whatever price is available once trading resumes, not at your stop price. Disclosure-driven gaps are exactly where 'I had a stop-loss' gives false confidence.",
+    "source": "NSE India / LiveMint (10–11 Mar 2025)",
+    "shock_chart": {
+      "instrument": "INDUSINDBK · NSE Cash",
+      "headline_stat": "-27.0% intraday · Close ₹656.80",
+      "pre_label": "Mar 10 Close (After-hours disclosure)",
+      "threshold_label": "Planned Stop-Loss (Skipped by gap)",
+      "shock_label": "Mar 11 Close ₹656.80 (-27%)",
+      "points": [[10, 24], [140, 22], [185, 80], [290, 96], [405, 90]],
+      "threshold_y": 42
+    }
   },
   {
+    "id": "sc_2024_06_04_election_vix",
     "concept_tag": "event_volatility_option_writing_risk",
     "event": "Lok Sabha Election Results Volatility Shock",
     "date": "2024-06-04",
     "what_happened": "As Lok Sabha election vote counts diverged sharply from exit polls, Sensex plunged 4,389.73 points (-5.74%) to close at 72,079.05 (intraday low 70,234.43) and Nifty 50 fell 1,379.40 points (-5.93%) to close at 21,884.50 (intraday low 21,281.45), while India VIX surged past 28 intraday.",
-    "correct_reasoning_chain": "An option writer who sold naked puts or straddles ahead of a binary event faces both rapid directional delta losses and an implied volatility (vega) explosion at the same time. Margin requirements expand sharply intraday while option premiums multiply, forcing broker square-offs at peak panic lows even if the index partially recovers by close."
+    "correct_reasoning_chain": "An option writer who sold naked puts or straddles ahead of a binary event faces both rapid directional delta losses and an implied volatility (vega) explosion at the same time. Margin requirements expand sharply intraday while option premiums multiply, forcing broker square-offs at peak panic lows even if the index partially recovers by close.",
+    "source": "NSE India / The Hindu (4 Jun 2024)",
+    "shock_chart": {
+      "instrument": "NIFTY 50 / INDIA VIX · NSE",
+      "headline_stat": "-5.93% close (-8.5% intraday) · VIX > 28",
+      "pre_label": "Jun 3 Exit-Poll High",
+      "threshold_label": "Short Put Breakeven Breached",
+      "shock_label": "Intraday Low 21,281 · Close 21,885",
+      "points": [[10, 20], [115, 22], [220, 98], [315, 86], [405, 76]],
+      "threshold_y": 46
+    }
   },
   {
+    "id": "sc_2020_03_06_yesbank_moratorium",
     "concept_tag": "regulatory_moratorium_liquidity_risk",
     "event": "Yes Bank RBI Moratorium Collapse",
     "date": "2020-03-06",
     "what_happened": "After the RBI placed Yes Bank under a moratorium late on March 5, 2020 and capped depositor withdrawals at ₹50,000, Yes Bank shares plunged as much as 85% intraday on the NSE on March 6, 2020, touching lows around ₹5.65.",
-    "correct_reasoning_chain": "In an extreme regulatory or solvency shock, past price support and normal daily volatility ranges become meaningless. Leveraged longs, naked put writers, and traders using the stock as pledged margin collateral suffer near-total capital wipeout simultaneously, and liquidity dries up so positions cannot be exited anywhere near prior trading levels."
+    "correct_reasoning_chain": "In an extreme regulatory or solvency shock, past price support and normal daily volatility ranges become meaningless. Leveraged longs, naked put writers, and traders using the stock as pledged margin collateral suffer near-total capital wipeout simultaneously, and liquidity dries up so positions cannot be exited anywhere near prior trading levels.",
+    "source": "RBI Press Release / Economic Times (6 Mar 2020)",
+    "shock_chart": {
+      "instrument": "YESBANK · NSE",
+      "headline_stat": "-85% intraday · Low ~₹5.65",
+      "pre_label": "Mar 5 Close (Moratorium at night)",
+      "threshold_label": "Collateral Haircut / Liquidation Zone",
+      "shock_label": "Intraday Low ₹5.65 (-85%)",
+      "points": [[10, 18], [130, 20], [190, 98], [300, 92], [405, 86]],
+      "threshold_y": 40
+    }
   },
   {
+    "id": "sc_2020_03_13_covid_circuit_1",
+    "concept_tag": "circuit_breaker_margin_risk",
+    "event": "Sensex/Nifty First COVID 10% Lower-Circuit Halt & Reversal",
+    "date": "2020-03-13",
+    "what_happened": "Within 15 minutes of the opening bell on March 13, 2020, Nifty 50 breached its 10% lower circuit and Sensex plunged over 3,090 points (~9.43%–10.34% intraday), triggering a mandatory 45-minute market-wide trading halt before staging a dramatic intraday rebound after reopening.",
+    "correct_reasoning_chain": "A 45-minute lower-circuit freeze traps leveraged traders unable to manage positions while volatility spikes; peak-margin square-offs triggered right at reopening can lock in maximum losses even when the index rebounds sharply later in the same session.",
+    "source": "NSE India / Business Today (13 Mar 2020)",
+    "shock_chart": {
+      "instrument": "NIFTY 50 / SENSEX · NSE/BSE",
+      "headline_stat": "-10% Lower Circuit Halt · 45-min freeze",
+      "pre_label": "Prior Close",
+      "threshold_label": "10% Lower Circuit (45-min halt)",
+      "shock_label": "Whipsaw Rebound After Reopen",
+      "points": [[10, 24], [85, 88], [195, 88], [300, 44], [405, 22]],
+      "threshold_y": 88
+    }
+  },
+  {
+    "id": "sc_2020_03_12_who_pandemic",
+    "concept_tag": "circuit_breaker_margin_risk",
+    "event": "WHO COVID-19 Pandemic Declaration Market Crash",
+    "date": "2020-03-12",
+    "what_happened": "Following the WHO's official declaration of COVID-19 as a global pandemic, Sensex plunged 2,919.26 points (-8.18%) to close at 32,778.14 and Nifty 50 fell 868.25 points (-8.30%) to close at 9,590.15.",
+    "correct_reasoning_chain": "An 8%+ single-day index drop erodes more than half of standard initial futures margin in one session. Traders who fail to top up T+1 MTM cash shortfalls face forced broker liquidation into thin panic liquidity.",
+    "source": "LiveMint / The Hindu (12 Mar 2020)",
+    "shock_chart": {
+      "instrument": "SENSEX / NIFTY 50 · NSE/BSE",
+      "headline_stat": "Sensex -8.18% · Nifty -8.30%",
+      "pre_label": "Prior Close 35,697",
+      "threshold_label": "Maintenance Margin Call Zone",
+      "shock_label": "Close 32,778 (-2,919 pts)",
+      "points": [[10, 22], [110, 48], [220, 74], [320, 88], [405, 92]],
+      "threshold_y": 62
+    }
+  },
+  {
+    "id": "sc_2004_05_17_black_monday_circuits",
+    "concept_tag": "circuit_breaker_margin_risk",
+    "event": "May 2004 Election Shock — Back-to-Back Lower Circuits",
+    "date": "2004-05-17",
+    "what_happened": "Following the unexpected 2004 general election outcome, BSE Sensex triggered the 10% lower circuit within minutes of opening (forcing a 1-hour trading halt) and plunged over 15% intraday before closing down 11.1%.",
+    "correct_reasoning_chain": "Sequential lower circuits remove all exit liquidity right when leveraged futures longs desperately need to cut exposure. Margin calls accumulate across halts while stop-loss orders sit unexecuted in frozen order books.",
+    "source": "CNN / Economic Times (17 May 2004)",
+    "shock_chart": {
+      "instrument": "BSE SENSEX · BSE",
+      "headline_stat": "-11.1% close · 10% lower circuit halt",
+      "pre_label": "Prior Close",
+      "threshold_label": "10% Lower Circuit (1-hr halt)",
+      "shock_label": "Intraday -15%+ · Close -11.1%",
+      "points": [[10, 20], [80, 76], [180, 76], [260, 98], [405, 84]],
+      "threshold_y": 76
+    }
+  },
+  {
+    "id": "sc_2008_01_22_gfc_lower_circuit",
+    "concept_tag": "circuit_breaker_margin_risk",
+    "event": "January 2008 Subprime Rout — Opening 10% Lower Circuit",
+    "date": "2008-01-22",
+    "what_happened": "Amid escalating US subprime fears, NSE Nifty breached its 10% lower circuit right at the opening bell on January 22, 2008 (triggering a mandatory 1-hour market halt) and Sensex plunged over 2,200 points intraday before closing down ~5%.",
+    "correct_reasoning_chain": "When a market-wide circuit breaker triggers at the open, leveraged overnight positions cannot be adjusted during the 1-hour freeze; brokers square off under-margined accounts at distressed reopening prints.",
+    "source": "NSE India / Economic Times (22 Jan 2008)",
+    "shock_chart": {
+      "instrument": "NIFTY 50 / SENSEX · NSE/BSE",
+      "headline_stat": "Opening 10% Lower Circuit · 1-hr halt",
+      "pre_label": "Jan 21 Close",
+      "threshold_label": "10% Lower Circuit Halt",
+      "shock_label": "Partial Recovery to -5% Close",
+      "points": [[10, 22], [75, 88], [185, 88], [300, 68], [405, 56]],
+      "threshold_y": 88
+    }
+  },
+  {
+    "id": "sc_2009_05_18_upa_upper_circuit",
+    "concept_tag": "circuit_breaker_margin_risk",
+    "event": "May 2009 Election Landslide — Historic 20% Upper Circuit Freeze",
+    "date": "2009-05-18",
+    "what_happened": "After the UPA coalition won a decisive mandate, Sensex surged past the 15% upper circuit within seconds (2-hour halt) and hit the 20% upper circuit immediately after reopening at 11:55 AM, halting trade for the rest of the day; Sensex closed up 2,110.79 points (+17.24%).",
+    "correct_reasoning_chain": "Circuit-breaker risk is two-sided: traders holding short futures or naked short calls faced an instant 17%–20% adverse gap with zero sellers and a full-day trading lock, wiping out margin capital without a single chance to cover.",
+    "source": "NSE India / Business Standard (18 May 2009)",
+    "shock_chart": {
+      "instrument": "BSE SENSEX · BSE/NSE",
+      "headline_stat": "+17.24% (+2,111 pts) · 20% Upper Circuit Lock",
+      "pre_label": "May 15 Close",
+      "threshold_label": "15% & 20% Upper Circuit Halts",
+      "shock_label": "Locked Up All Day (+17.24%)",
+      "points": [[10, 88], [90, 36], [210, 36], [250, 16], [405, 16]],
+      "threshold_y": 36
+    }
+  },
+  {
+    "id": "sc_2008_10_24_gfc_black_friday",
+    "concept_tag": "circuit_breaker_margin_risk",
+    "event": "Global Financial Crisis 'Black Friday' Selloff",
+    "date": "2008-10-24",
+    "what_happened": "At the height of the 2008 Global Financial Crisis, Sensex crashed 1,070.63 points (-10.96%) to close at 8,701.07 while Nifty 50 plunged over 12% to close near 2,584.",
+    "correct_reasoning_chain": "During systemic global deleveraging, daily index swings exceed 10%, causing SPAN margin requirements to jump sharply at the exact moment leveraged longs suffer massive MTM cash outflows.",
+    "source": "Economic Times / Rediff (24 Oct 2008)",
+    "shock_chart": {
+      "instrument": "SENSEX / NIFTY 50 · NSE/BSE",
+      "headline_stat": "Sensex -10.96% · Nifty -12.2%",
+      "pre_label": "Prior Close 9,772",
+      "threshold_label": "SPAN Margin Expansion Zone",
+      "shock_label": "Close 8,701 (-1,071 pts)",
+      "points": [[10, 20], [120, 46], [240, 76], [330, 90], [405, 94]],
+      "threshold_y": 58
+    }
+  },
+  {
+    "id": "sc_2021_02_24_nse_outage",
+    "concept_tag": "circuit_breaker_margin_risk",
+    "event": "NSE Telecom Link Failure & 4-Hour Trading Halt",
+    "date": "2021-02-24",
+    "what_happened": "On February 24, 2021, a telecom link failure froze live Nifty 50 (at 14,820.45) and Bank Nifty (at 35,626.60) spot feeds around 10:08 AM, forcing a complete NSE trading halt at 11:40 AM across all segments until an extended reopening at 3:30 PM.",
+    "correct_reasoning_chain": "Even without a price crash, an operational exchange outage leaves intraday F&O traders completely unable to modify stop-losses or close expiry-week positions for hours, exposing them to abrupt repricing when trading resumes.",
+    "source": "The News Minute / NSE Circular (24 Feb 2021)",
+    "shock_chart": {
+      "instrument": "NIFTY 50 / BANK NIFTY · NSE",
+      "headline_stat": "4-Hour Exchange Halt · Frozen at 14,820",
+      "pre_label": "10:08 AM Feed Freeze",
+      "threshold_label": "11:40 AM–3:30 PM Complete Halt",
+      "shock_label": "Extended Reopen Repricing",
+      "points": [[10, 56], [100, 50], [280, 50], [340, 32], [405, 28]],
+      "threshold_y": 50
+    }
+  },
+  {
+    "id": "sc_2009_01_07_satyam_fraud",
+    "concept_tag": "overnight_gap_stoploss_risk",
+    "event": "Satyam Computer Services Accounting Fraud Confession",
+    "date": "2009-01-07",
+    "what_happened": "After founder B. Ramalinga Raju confessed to a ₹7,000+ crore accounting fraud on January 7, 2009, Satyam shares collapsed roughly 78% in a single day and dragged the BSE Sensex down 7.25%.",
+    "correct_reasoning_chain": "Corporate governance fraud disclosures bypass every technical support level and stop-loss order. Traders holding leveraged single-stock futures suffer catastrophic losses far beyond their posted initial margin.",
+    "source": "Economic Times / Wikipedia Archive (7 Jan 2009)",
+    "shock_chart": {
+      "instrument": "SATYAMCOMP · NSE/BSE",
+      "headline_stat": "Stock -78% · Sensex -7.25%",
+      "pre_label": "Pre-Confession Close",
+      "threshold_label": "Stop-Loss Trigger (Skipped)",
+      "shock_label": "Single-Day Collapse (-78%)",
+      "points": [[10, 18], [110, 20], [160, 82], [290, 96], [405, 98]],
+      "threshold_y": 36
+    }
+  },
+  {
+    "id": "sc_2018_09_21_dhfl_nbfc_shock",
+    "concept_tag": "overnight_gap_stoploss_risk",
+    "event": "DHFL / IL&FS NBFC Liquidity Panic Plunge",
+    "date": "2018-09-21",
+    "what_happened": "Following commercial paper default fears after IL&FS, Dewan Housing Finance (DHFL) crashed up to 59.67% intraday on September 21, 2018, triggering a violent 1,127-point (-3.03%) intraday plunge in the BSE Sensex.",
+    "correct_reasoning_chain": "In a sudden credit-liquidity panic, bids vanish within minutes so stop-loss market orders cascade through thin order books at massive slippage—realizing losses multiple times larger than planned.",
+    "source": "New Indian Express (21 Sep 2018)",
+    "shock_chart": {
+      "instrument": "DHFL · NSE Cash & F&O",
+      "headline_stat": "-59.67% intraday · Sensex -1,127 pts intraday",
+      "pre_label": "Morning Trade",
+      "threshold_label": "Stop-Loss Cascade Zone",
+      "shock_label": "Intraday Low -59.67%",
+      "points": [[10, 22], [130, 26], [210, 96], [310, 74], [405, 68]],
+      "threshold_y": 44
+    }
+  },
+  {
+    "id": "sc_2024_02_01_paytm_rbi_curb",
+    "concept_tag": "overnight_gap_stoploss_risk",
+    "event": "Paytm RBI Payments Bank Curbs — 20% Lower-Circuit Gap",
+    "date": "2024-02-01",
+    "what_happened": "After the RBI imposed severe operational restrictions on Paytm Payments Bank late on January 31, 2024, One97 Communications (Paytm) opened locked at its 20% lower circuit on February 1, 2024 with zero exit liquidity.",
+    "correct_reasoning_chain": "When an after-hours regulatory order locks a stock at its 20% lower circuit at the opening bell, stop-loss orders cannot fill at all—trapping longs into consecutive lower-circuit sessions.",
+    "source": "RBI Press Release / India Today (1 Feb 2024)",
+    "shock_chart": {
+      "instrument": "PAYTM · NSE/BSE",
+      "headline_stat": "-20.0% Lower Circuit Lock at Open",
+      "pre_label": "Jan 31 Close (RBI order post-close)",
+      "threshold_label": "Planned Stop-Loss (Unfilled)",
+      "shock_label": "Feb 1 Locked -20% Circuit",
+      "points": [[10, 22], [140, 22], [160, 88], [405, 88]],
+      "threshold_y": 42
+    }
+  },
+  {
+    "id": "sc_2023_01_27_adani_hindenburg",
+    "concept_tag": "overnight_gap_stoploss_risk",
+    "event": "Adani Group / Hindenburg Short-Seller Rout",
+    "date": "2023-01-27",
+    "what_happened": "Following the Hindenburg Research report, Adani Group stocks suffered steep circuit selloffs on January 27, 2023: Adani Total Gas and Adani Green Energy hit 20% lower circuits while flagship Adani Enterprises plunged 18.52%.",
+    "correct_reasoning_chain": "High-beta stocks facing headline short-seller shocks can gap straight into lower circuits with surging F&O margins and evaporating bids, rendering tight stop-losses ineffective.",
+    "source": "Al Jazeera / NSE Data (27 Jan 2023)",
+    "shock_chart": {
+      "instrument": "ADANIENT / ADANI GROUP · NSE",
+      "headline_stat": "ADANIENT -18.52% · Group stocks -20% circuits",
+      "pre_label": "Pre-Report Level",
+      "threshold_label": "Stop-Loss Trigger Breached",
+      "shock_label": "Jan 27 Close -18.52% to -20%",
+      "points": [[10, 20], [115, 32], [230, 74], [330, 88], [405, 92]],
+      "threshold_y": 44
+    }
+  },
+  {
+    "id": "sc_2018_02_15_pnb_fraud",
+    "concept_tag": "overnight_gap_stoploss_risk",
+    "event": "Punjab National Bank ₹11,400 Cr Fraud Disclosure",
+    "date": "2018-02-15",
+    "what_happened": "Following PNB's February 14–15, 2018 disclosure of ₹11,400 crore in fraudulent LoUs linked to Nirav Modi, PNB shares tumbled nearly 12% in the session even as the broader Sensex closed slightly positive (+0.41%).",
+    "correct_reasoning_chain": "Single-stock idiosyncratic fraud risk can inflict double-digit gap-down losses even on a calm index day—highlighting why concentrated single-stock F&O leverage cannot be protected by broad-market assumptions or narrow stop-losses.",
+    "source": "LiveMint (15 Feb 2018)",
+    "shock_chart": {
+      "instrument": "PNB · NSE Cash & F&O",
+      "headline_stat": "PNB ~-12% · Sensex +0.41%",
+      "pre_label": "Pre-Disclosure Close",
+      "threshold_label": "Stop-Loss Level Skipped",
+      "shock_label": "Idiosyncratic -12% Drop",
+      "points": [[10, 24], [135, 26], [190, 72], [310, 84], [405, 82]],
+      "threshold_y": 44
+    }
+  },
+  {
+    "id": "sc_2020_11_18_lvb_moratorium",
+    "concept_tag": "regulatory_moratorium_liquidity_risk",
+    "event": "Lakshmi Vilas Bank RBI Moratorium & 20% Lower Circuit",
+    "date": "2020-11-18",
+    "what_happened": "After the government placed Lakshmi Vilas Bank under a one-month moratorium and superseded its board late on November 17, 2020, LVB shares locked down 19.94% at their 20% lower circuit (₹12.45) on November 18, 2020.",
+    "correct_reasoning_chain": "When a lender is placed under regulatory moratorium, equity shareholders face severe write-down risk while the stock locks in consecutive lower circuits—making pledged collateral worthless and exits impossible.",
+    "source": "New Indian Express / RBI (18 Nov 2020)",
+    "shock_chart": {
+      "instrument": "LAKSHVILAS · BSE/NSE",
+      "headline_stat": "-19.94% Lower Circuit · ₹12.45",
+      "pre_label": "Nov 17 Close (Moratorium announced)",
+      "threshold_label": "Zero-Bid Circuit Floor",
+      "shock_label": "Locked at ₹12.45 (-19.94%)",
+      "points": [[10, 22], [140, 22], [165, 90], [405, 90]],
+      "threshold_y": 90
+    }
+  },
+  {
+    "id": "sc_2019_09_20_corp_tax_cut",
+    "concept_tag": "event_volatility_option_writing_risk",
+    "event": "Surprise Corporate Tax Cut — Historic +5.32% Short-Squeeze Surge",
+    "date": "2019-09-20",
+    "what_happened": "After Finance Minister Nirmala Sitharaman announced a surprise corporate tax rate cut during market hours on September 20, 2019, Sensex rocketed +1,921.15 points (+5.32%) to 38,014.62 and Nifty 50 surged +569.40 points (+5.32%) to 11,274.45.",
+    "correct_reasoning_chain": "Unscheduled policy announcements create violent upside tail risk for naked call writers and short straddles—call premiums multiply several-fold within minutes, triggering immediate intraday margin breaches and forced short-covering.",
+    "source": "The News Minute / Factly (20 Sep 2019)",
+    "shock_chart": {
+      "instrument": "NIFTY 50 / SENSEX · NSE/BSE",
+      "headline_stat": "+5.32% (+1,921 pts Sensex · +569 pts Nifty)",
+      "pre_label": "Pre-Announcement Flat Open",
+      "threshold_label": "Short Call Strikes Blown Through",
+      "shock_label": "Close 11,274 (+5.32%)",
+      "points": [[10, 84], [130, 82], [180, 34], [300, 22], [405, 18]],
+      "threshold_y": 54
+    }
+  },
+  {
+    "id": "sc_2022_02_24_ukraine_invasion",
+    "concept_tag": "event_volatility_option_writing_risk",
+    "event": "Russia–Ukraine Invasion Geopolitical Volatility Crash",
+    "date": "2022-02-24",
+    "what_happened": "As Russia launched military operations in Ukraine on February 24, 2022 (a weekly F&O expiry day), Sensex crashed 2,702.15 points (-4.72%) to close at 54,529.91 and Nifty 50 plunged 815.30 points (-4.78%) to close at 16,247.95.",
+    "correct_reasoning_chain": "An overnight geopolitical shock hitting on weekly expiry day destroys expiry-day short-option strategies: out-of-the-money puts move deep in-the-money at the open while gamma and implied volatility explode simultaneously.",
+    "source": "Indian Express (24 Feb 2022)",
+    "shock_chart": {
+      "instrument": "NIFTY 50 / SENSEX · NSE/BSE",
+      "headline_stat": "Nifty -4.78% (-815 pts) · Weekly Expiry",
+      "pre_label": "Feb 23 Close 17,063",
+      "threshold_label": "Expiry Short-Put Gamma Zone",
+      "shock_label": "Close 16,248 (-4.78%)",
+      "points": [[10, 20], [110, 56], [230, 78], [320, 86], [405, 92]],
+      "threshold_y": 52
+    }
+  },
+  {
+    "id": "sc_2024_08_05_yen_carry_unwind",
+    "concept_tag": "event_volatility_option_writing_risk",
+    "event": "Global Yen Carry-Trade Unwind Volatility Spike",
+    "date": "2024-08-05",
+    "what_happened": "Triggered by a Bank of Japan rate hike and global yen carry-trade unwinding, Sensex plunged 2,222.55 points (-2.74%) to close at 78,768.42 and Nifty 50 dropped 662.10 points (-2.68%) to close at 24,055.60 alongside a sharp spike in India VIX.",
+    "correct_reasoning_chain": "Cross-border liquidity shocks cause overnight index gaps and sudden VIX surges even when domestic fundamentals are unchanged—penalizing short-volatility option sellers who rely on calm trailing volatility.",
+    "source": "New Indian Express / Financial Express (5 Aug 2024)",
+    "shock_chart": {
+      "instrument": "NIFTY 50 / SENSEX · NSE/BSE",
+      "headline_stat": "Sensex -2.74% (-2,223 pts) · Nifty -2.68%",
+      "pre_label": "Aug 2 Close 24,718",
+      "threshold_label": "Overnight Gap Through Short Strikes",
+      "shock_label": "Close 24,056 (-662 pts)",
+      "points": [[10, 22], [120, 66], [240, 82], [330, 78], [405, 80]],
+      "threshold_y": 54
+    }
+  },
+  {
+    "id": "sc_2015_08_24_china_black_monday",
+    "concept_tag": "event_volatility_option_writing_risk",
+    "event": "China Yuan Devaluation 'Black Monday' Rout",
+    "date": "2015-08-24",
+    "what_happened": "Amid fears of a Chinese economic hard landing and yuan devaluation, Sensex crashed 1,624.51 points (-5.94%) to close at 25,741.56 and Nifty 50 plunged 490.95 points (-5.92%) to close at 7,809.00.",
+    "correct_reasoning_chain": "Global contagion days produce nearly 6% single-session index drawdowns that blow past multi-week option strangle boundaries, compounding delta losses with surging implied volatility and margin calls.",
+    "source": "Financial Express / New Indian Express (24 Aug 2015)",
+    "shock_chart": {
+      "instrument": "SENSEX / NIFTY 50 · NSE/BSE",
+      "headline_stat": "Sensex -5.94% · Nifty -5.92%",
+      "pre_label": "Prior Close 27,366",
+      "threshold_label": "Short Strangle Lower Wing Breached",
+      "shock_label": "Close 25,742 (-1,625 pts)",
+      "points": [[10, 20], [115, 52], [235, 76], [330, 88], [405, 92]],
+      "threshold_y": 54
+    }
+  },
+  {
+    "id": "sc_2016_11_09_demonetization_shock",
+    "concept_tag": "event_volatility_option_writing_risk",
+    "event": "Demonetization & US Election Intraday Volatility Shock",
+    "date": "2016-11-09",
+    "what_happened": "Following the overnight November 8 demonetization announcement and simultaneous US election counting, Sensex opened sharply lower before closing down roughly 500–540 points (~2%) and Nifty 50 fell ~2%–2.3% after deep intraday swings.",
+    "correct_reasoning_chain": "Stacked domestic policy and global macro catalysts trigger violent opening gaps followed by wide whipsaws—margin calls hit leveraged accounts at the opening lows even if indices recover partway by close.",
+    "source": "Groww / Historical Archive (9 Nov 2016)",
+    "shock_chart": {
+      "instrument": "NIFTY 50 / SENSEX · NSE/BSE",
+      "headline_stat": "Intraday Panic Gap · Close ~-2.0% to -2.3%",
+      "pre_label": "Nov 8 Close (Policy at 8 PM)",
+      "threshold_label": "Opening Whipsaw Margin Squeeze",
+      "shock_label": "Partial Recovery to ~-2% Close",
+      "points": [[10, 24], [90, 92], [210, 74], [320, 62], [405, 58]],
+      "threshold_y": 64
+    }
+  },
+  {
+    "id": "sc_2016_06_24_brexit_shock",
+    "concept_tag": "event_volatility_option_writing_risk",
+    "event": "Brexit Referendum Surprise Vote Volatility Shock",
+    "date": "2016-06-24",
+    "what_happened": "After UK voters unexpectedly chose Brexit, Sensex plunged over 1,000 points intraday before closing down 604.51 points (-2.24%) at 26,397.71 and Nifty 50 dropped 181.85 points (-2.20%) to close at 8,088.60.",
+    "correct_reasoning_chain": "Binary international referendums with consensus priced heavily one way trigger abrupt overnight gaps and intraday volatility spikes, punishing traders who sell options assuming polling consensus is certain.",
+    "source": "New Indian Express / Forbes India (24 Jun 2016)",
+    "shock_chart": {
+      "instrument": "SENSEX / NIFTY 50 · NSE/BSE",
+      "headline_stat": "Intraday -1,000+ pts · Close -2.24%",
+      "pre_label": "Jun 23 Close 27,002",
+      "threshold_label": "Intraday Panic Low (-1,000+ pts)",
+      "shock_label": "Close 26,398 (-605 pts)",
+      "points": [[10, 22], [110, 88], [220, 78], [320, 64], [405, 58]],
+      "threshold_y": 68
+    }
+  },
+  {
+    "id": "sc_2020_02_01_budget_selloff",
+    "concept_tag": "event_volatility_option_writing_risk",
+    "event": "Union Budget 2020 Saturday Special-Session Selloff",
+    "date": "2020-02-01",
+    "what_happened": "During the special Saturday Union Budget trading session on February 1, 2020, Sensex tumbled 987.96 points (-2.43%) to close at 39,735.53 (intraday drop ~1,092 points) and Nifty 50 fell 300.25 points (-2.51%) to close at 11,661.85.",
+    "correct_reasoning_chain": "Budget sessions combine thin weekend liquidity with headline-driven tax/fiscal surprises; holding naked short options or tight stop-losses into speech announcements exposes traders to rapid one-way repricing.",
+    "source": "The Hindu / India Today (1 Feb 2020)",
+    "shock_chart": {
+      "instrument": "SENSEX / NIFTY 50 · NSE/BSE",
+      "headline_stat": "Sensex -2.43% (-988 pts) · Nifty -2.51%",
+      "pre_label": "Budget Open 40,723",
+      "threshold_label": "Post-Speech Breakdown",
+      "shock_label": "Close 39,736 (-988 pts)",
+      "points": [[10, 24], [140, 32], [230, 74], [330, 88], [405, 84]],
+      "threshold_y": 54
+    }
+  },
+  {
+    "id": "sc_2021_11_26_omicron_selloff",
+    "concept_tag": "event_volatility_option_writing_risk",
+    "event": "Omicron Variant Discovery 'Freaky Friday' Selloff",
+    "date": "2021-11-26",
+    "what_happened": "After the WHO flagged the heavily mutated B.1.1.529 (Omicron) COVID variant, Sensex plunged 1,687.94 points (-2.87%) to close at 57,107.15 and Nifty 50 dropped 509.80 points (-2.91%) to close at 17,026.45.",
+    "correct_reasoning_chain": "Unscheduled macro health shocks strike without warning on any trading day, expanding implied volatility and pushing leveraged longs and short puts into sudden mark-to-market drawdowns.",
+    "source": "Indian Express / LiveMint (26 Nov 2021)",
+    "shock_chart": {
+      "instrument": "SENSEX / NIFTY 50 · NSE/BSE",
+      "headline_stat": "Sensex -2.87% (-1,688 pts) · Nifty -2.91%",
+      "pre_label": "Nov 25 Close 17,536",
+      "threshold_label": "Volatility Expansion Zone",
+      "shock_label": "Close 17,026 (-510 pts)",
+      "points": [[10, 22], [115, 48], [235, 72], [330, 86], [405, 90]],
+      "threshold_y": 56
+    }
+  },
+  {
+    "id": "sc_2025_04_07_us_tariff_shock",
+    "concept_tag": "overnight_gap_stoploss_risk",
+    "event": "US Reciprocal Tariff Global Rout ('Black Monday')",
+    "date": "2025-04-07",
+    "what_happened": "Following sweeping US reciprocal tariff announcements, Indian indices gapped sharply lower at the open on April 7, 2025: Sensex fell 2,226.79 points (-2.95%) to close at 73,137.90 (after touching deeper intraday lows near 71,425) and Nifty 50 dropped 742.85 points (-3.24%) to close at 22,161.60.",
+    "correct_reasoning_chain": "Weekend trade-policy shocks produce massive Monday opening gaps across indices and export sectors—skipping pre-placed stop-loss triggers and forcing market-order fills near peak opening panic.",
+    "source": "The Hindu / Angel One Market Report (7 Apr 2025)",
+    "shock_chart": {
+      "instrument": "NIFTY 50 / SENSEX · NSE/BSE",
+      "headline_stat": "Nifty -3.24% (-743 pts) · Sensex -2.95%",
+      "pre_label": "Apr 4 Close 75,365",
+      "threshold_label": "Monday Opening Gap Past Stops",
+      "shock_label": "Intraday ~71,425 · Close 73,138",
+      "points": [[10, 20], [100, 94], [220, 84], [320, 76], [405, 72]],
+      "threshold_y": 50
+    }
+  },
+  {
+    "id": "sc_general_market_risk_fallback",
     "concept_tag": "general_market_risk",
     "event": "Sudden Market Volatility & Liquidity Shock (General Fallback)",
     "date": "General Market Stress",
     "what_happened": "During a sudden macro or news-driven volatility spike on Indian exchanges, bid-ask spreads widen dramatically, order-book depth thins out, and intraday price swings exceed normal historical averages within minutes while brokers enforce peak-margin rules.",
-    "correct_reasoning_chain": "When volatility spikes and liquidity thins, market orders suffer heavy slippage, leverage magnifies mark-to-market drawdowns against posted margin, and a trader cannot assume smooth exits at screen prices. Risk must be sized upfront assuming adverse execution and margin expansion rather than calm-market averages."
+    "correct_reasoning_chain": "When volatility spikes and liquidity thins, market orders suffer heavy slippage, leverage magnifies mark-to-market drawdowns against posted margin, and a trader cannot assume smooth exits at screen prices. Risk must be sized upfront assuming adverse execution and margin expansion rather than calm-market averages.",
+    "source": "SEBI Peak-Margin & NISM Series VIII Risk Framework (General Fallback)"
   }
 ]

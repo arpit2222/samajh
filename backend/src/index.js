@@ -1,4 +1,5 @@
 import "dotenv/config";
+import http from "node:http";
 import express from "express";
 import cors from "cors";
 import multer from "multer";
@@ -23,7 +24,14 @@ import requisitionsRouter from "./routes/requisitions.js";
 import tradeProfileRouter from "./routes/tradeProfile.js";
 import developerRouter from "./routes/developer.js";
 import publicV1Router from "./routes/publicV1.js";
+import partnerV1Router from "./routes/partnerV1.js";
+import gauntletRouter from "./routes/gauntlet.js";
+import discussionRouter from "./routes/discussion.js";
+import kiteRouter from "./routes/kite.js";
+import angelRouter from "./routes/angel.js";
 import mcpRouter from "./routes/mcp.js";
+import { attachLiveTeachbackWebSocket } from "./routes/liveTeachbackWs.js";
+import { startCohortClusteringSchedule } from "./jobs/cohortClusteringJob.js";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 8080;
@@ -112,6 +120,11 @@ app.use("/api/requisitions", requisitionsRouter);
 app.use("/api/trade-profile", tradeProfileRouter);
 app.use("/api/developer", developerRouter);
 app.use("/api/public/v1", publicV1Router);
+app.use("/api/partner/v1", partnerV1Router);
+app.use("/api/gauntlet", gauntletRouter);
+app.use("/api/discussion", discussionRouter);
+app.use("/api/broker/kite", kiteRouter);
+app.use("/api/broker/angel", angelRouter);
 app.use("/mcp", mcpRouter);
 
 // Centralized JSON error handler (prevents crashes & unhandled rejections)
@@ -142,8 +155,12 @@ process.on("uncaughtException", (err) => {
 
 async function start() {
   await initDatabase();
-  app.listen(PORT, "0.0.0.0", () => {
+  startCohortClusteringSchedule();
+  const server = http.createServer(app);
+  attachLiveTeachbackWebSocket(server);
+  server.listen(PORT, "0.0.0.0", () => {
     console.log(`[Samajh] Backend listening on http://localhost:${PORT}`);
+    console.log(`[Samajh] Gemini Live WebSocket ready at ws://localhost:${PORT}/ws/teachback/live`);
     console.log(`[Samajh] Gemini REST model: ${getModelName()}`);
   });
 }

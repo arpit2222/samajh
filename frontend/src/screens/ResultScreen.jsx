@@ -15,6 +15,7 @@ import {
   AlertTriangle,
   FileCheck2,
   Shuffle,
+  MessageSquareText,
 } from "lucide-react";
 import { Button } from "../components/ui/button.jsx";
 import {
@@ -61,6 +62,8 @@ export default function ResultScreen({
   examResult,
   stressResult,
   onStartMultiScenario,
+  onOpenLeaderboard,
+  onOpenDiscussion,
   onOpenCredential,
   onReset,
 }) {
@@ -293,6 +296,20 @@ export default function ResultScreen({
           {onStartMultiScenario && (
             <Button type="button" variant="secondary" onClick={onStartMultiScenario}>
               <Shuffle className="h-4 w-4" /> Multi-Scenario Gauntlet
+            </Button>
+          )}
+          {onOpenLeaderboard && (
+            <Button type="button" variant="outline" onClick={onOpenLeaderboard}>
+              <Trophy className="h-4 w-4" /> View Leaderboard
+            </Button>
+          )}
+          {onOpenDiscussion && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenDiscussion(stressResult?.concept_tag)}
+            >
+              <MessageSquareText className="h-4 w-4" /> Discussion Circle
             </Button>
           )}
           <Button type="button" size="lg" onClick={onReset}>

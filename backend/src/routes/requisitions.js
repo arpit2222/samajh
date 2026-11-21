@@ -2,6 +2,7 @@ import { Router } from "express";
 import crypto from "node:crypto";
 import {
   createRequisition,
+  getCohortClusterSummary,
   getRequisition,
   listDiscoverableCredentials,
   listRequisitionsByEmployer,
@@ -60,6 +61,36 @@ router.get("/", requireAuth, requireRole("employer"), async (req, res, next) => 
   try {
     const requisitions = await listRequisitionsByEmployer(req.user.uid);
     return res.status(200).json({ requisitions });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+/**
+ * GET /api/requisitions/cohort-insights?partner_id=default
+ * Read-only aggregate cohort weak-topic clusters for the Employer/Partner dashboard.
+ * Reads pre-computed batch summaries only (never triggers clustering per-request,
+ * never exposes any individual user data).
+ */
+router.get("/cohort-insights", requireAuth, requireRole("employer"), async (req, res, next) => {
+  try {
+    const partnerId = req.query.partner_id?.toString().trim() || "default";
+    const summary = await getCohortClusterSummary(partnerId);
+    if (!summary) {
+      return res.status(200).json({
+        partner_id: partnerId,
+        computed_at: null,
+        total_sessions_analyzed: 0,
+        cluster_count: 0,
+        vector_backend: "vertex-ai-vector-search",
+        aggregate_only: true,
+        clusters: [],
+      });
+    }
+    return res.status(200).json({
+      ...summary,
+      aggregate_only: true,
+    });
   } catch (err) {
     return next(err);
   }

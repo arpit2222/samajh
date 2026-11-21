@@ -3,6 +3,8 @@ import crypto from "node:crypto";
 import multer from "multer";
 import { runSamajhPipeline } from "../agents/samajhPipeline.js";
 import { createSession } from "../db/firestore.js";
+import { resolveLanguage } from "../tools/languages.js";
+import { resolveNismModule } from "../tools/nismModules.js";
 
 const router = Router();
 
@@ -61,19 +63,32 @@ router.post("/", upload.single("image"), async (req, res, next) => {
       });
     }
 
+    // Validate requested Teach-Back language and NISM module (default: series-viii)
+    const langConfig = resolveLanguage(req.body?.language);
+    const modConfig = resolveNismModule(req.body?.module);
+
     const { state, adk_trace } = await runSamajhPipeline({
       activeStages: ["ingest", "concept"],
       ingestInput,
+      language: langConfig.code,
+      nismModule: modConfig.id,
     });
 
     const uid = req.headers["x-firebase-uid"]?.toString().trim() || req.body?.uid || null;
     const userEmail = req.headers["x-firebase-email"]?.toString().trim() || null;
+    const externalUserRef =
+      typeof req.body?.external_user_ref === "string"
+        ? req.body.external_user_ref.trim() || null
+        : null;
 
     const sessionId = crypto.randomUUID();
     await createSession({
       sessionId,
       uid,
       userEmail,
+      externalUserRef,
+      language: langConfig.code,
+      nismModule: modConfig.id,
       rawText: state.raw_text,
       concept: state.concept,
       analogy: state.analogy,
@@ -84,6 +99,9 @@ router.post("/", upload.single("image"), async (req, res, next) => {
       sessionId,
       concept: state.concept,
       analogy: state.analogy,
+      language: langConfig.code,
+      module: modConfig.id,
+      hasStressTest: modConfig.hasStressTest,
       grounding: state.concept_grounding,
       adk_trace,
     });

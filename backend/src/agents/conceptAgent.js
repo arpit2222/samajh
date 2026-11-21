@@ -25,14 +25,14 @@ const conceptResponseSchema = {
  * Grounds output against real NISM workbook text (Vertex AI Search / NISM RAG corpus)
  * and picks ONE concept (not a list) + ONE trading-flavored analogy.
  */
-export async function conceptAgent({ raw_text } = {}) {
+export async function conceptAgent({ raw_text, moduleId = "series-viii" } = {}) {
   if (!raw_text || typeof raw_text !== "string" || !raw_text.trim()) {
     const err = new Error("conceptAgent requires non-empty raw_text.");
     err.statusCode = 400;
     throw err;
   }
 
-  const grounding = await retrieveNismGrounding(raw_text, 2);
+  const grounding = await retrieveNismGrounding(raw_text, 2, { moduleId });
   const groundingBlock = formatGroundingBlock(grounding);
 
   const parsed = await callGeminiJSON({

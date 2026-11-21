@@ -30,10 +30,14 @@ router.post("/", async (req, res, next) => {
       return res.status(400).json({ error: "Please enter your explanation before sending." });
     }
 
+    const sessionLanguage = session.language || "en-IN";
+    const sessionModule = session.nismModule || "series-viii";
     const { state, adk_trace } = await runSamajhPipeline({
       activeStages: ["socratic"],
       concept: session.concept,
       turns,
+      language: sessionLanguage,
+      nismModule: sessionModule,
     });
 
     const reply = state.socratic_reply ?? null;
@@ -48,6 +52,7 @@ router.post("/", async (req, res, next) => {
     return res.status(200).json({
       reply,
       done,
+      language: sessionLanguage,
       adk_trace,
     });
   } catch (err) {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ShieldCheck,
   Upload,
@@ -13,13 +13,28 @@ import {
   Link2,
   CheckCircle2,
   BookOpen,
+  RefreshCw,
+  Unlink,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
   parseAndRedactTradebookCsv,
   SAMPLE_BROKER_CSV,
 } from "../lib/tradebookParser.js";
-import { reviewPastTrade, startTeachBackFromConceptTag } from "../api.js";
+import {
+  connectAngelSmartApi,
+  disconnectAngel,
+  disconnectKite,
+  exchangeKiteRequestToken,
+  fetchAngelStatus,
+  fetchKiteLoginUrl,
+  fetchKiteStatus,
+  reviewPastTrade,
+  startTeachBackFromConceptTag,
+  syncAngelTrades,
+  syncKiteTrades,
+} from "../api.js";
 import { Button } from "../components/ui/button.jsx";
 import {
   Card,
@@ -30,6 +45,7 @@ import {
   CardTitle,
 } from "../components/ui/card.jsx";
 import { Badge } from "../components/ui/badge.jsx";
+import { Input } from "../components/ui/input.jsx";
 import { Textarea } from "../components/ui/textarea.jsx";
 import { Spinner } from "../components/ui/spinner.jsx";
 import { ErrorBanner } from "../components/ui/error-banner.jsx";
@@ -51,7 +67,210 @@ export default function TraderProfiler({ onJumpToTeachBack, onBack }) {
   const [diagnosisResult, setDiagnosisResult] = useState(null);
   const [error, setError] = useState("");
 
+  // Zerodha Kite Connect (Read-Only) state
+  const [kiteStatus, setKiteStatus] = useState(null);
+  const [kiteLoading, setKiteLoading] = useState(true);
+  const [kiteBusy, setKiteBusy] = useState(false);
+  const [kiteError, setKiteError] = useState("");
+
+  // Angel One SmartAPI (Read-Only TOTP) state
+  const [angelStatus, setAngelStatus] = useState(null);
+  const [angelLoading, setAngelLoading] = useState(true);
+  const [angelBusy, setAngelBusy] = useState(false);
+  const [angelError, setAngelError] = useState("");
+  const [showAngelForm, setShowAngelForm] = useState(false);
+  const [angelClientCode, setAngelClientCode] = useState("");
+  const [angelPin, setAngelPin] = useState("");
+  const [angelTotp, setAngelTotp] = useState("");
+
   const fileInputRef = useRef(null);
+
+  const loadAngelStatus = useCallback(async () => {
+    setAngelLoading(true);
+    try {
+      const status = await fetchAngelStatus();
+      setAngelStatus(status);
+    } catch {
+      setAngelStatus({ configured: false, connected: false, scope: "read_only" });
+    } finally {
+      setAngelLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadAngelStatus();
+  }, [loadAngelStatus]);
+
+  async function handleConnectAngel(e) {
+    e.preventDefault();
+    setAngelError("");
+    setAngelBusy(true);
+    try {
+      await connectAngelSmartApi({
+        clientcode: angelClientCode.trim(),
+        password: angelPin.trim(),
+        totp: angelTotp.trim(),
+      });
+      // Immediately wipe sensitive inputs from React state
+      setAngelClientCode("");
+      setAngelPin("");
+      setAngelTotp("");
+      setShowAngelForm(false);
+      toast.success("Angel One SmartAPI connected (read-only, encrypted token stored)");
+      await loadAngelStatus();
+    } catch (err) {
+      setAngelError(err.message || "Could not connect Angel One SmartAPI.");
+    } finally {
+      setAngelBusy(false);
+    }
+  }
+
+  async function handleSyncAngel() {
+    setAngelError("");
+    setError("");
+    setDiagnosisResult(null);
+    setAngelBusy(true);
+    try {
+      const anonymized = await syncAngelTrades();
+      setParsed(anonymized);
+      setSelectedTradeId(anonymized.trades[0]?.id || null);
+      toast.success(
+        `Synced & anonymized ${anonymized.trades.length} trades from Angel One SmartAPI (read-only)`
+      );
+      await loadAngelStatus();
+    } catch (err) {
+      if (err.needsReconnect) {
+        setAngelStatus((prev) => ({ ...(prev || {}), needs_reconnect: true }));
+      }
+      setAngelError(err.message || "Could not sync Angel One SmartAPI trades.");
+    } finally {
+      setAngelBusy(false);
+    }
+  }
+
+  async function handleDisconnectAngel() {
+    setAngelError("");
+    setAngelBusy(true);
+    try {
+      await disconnectAngel();
+      setAngelStatus((prev) => ({
+        ...(prev || {}),
+        connected: false,
+        needs_reconnect: false,
+        connected_at: null,
+        expires_at: null,
+        last_synced_at: null,
+      }));
+      toast.info("Angel One SmartAPI disconnected and encrypted token deleted immediately");
+    } catch (err) {
+      setAngelError(err.message || "Could not disconnect Angel One SmartAPI.");
+    } finally {
+      setAngelBusy(false);
+    }
+  }
+
+  const loadKiteStatus = useCallback(async () => {
+    setKiteLoading(true);
+    try {
+      const status = await fetchKiteStatus();
+      setKiteStatus(status);
+    } catch {
+      setKiteStatus({ configured: false, connected: false, scope: "read_only" });
+    } finally {
+      setKiteLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    async function initKite() {
+      if (typeof window !== "undefined") {
+        const params = new URLSearchParams(window.location.search);
+        const requestToken = params.get("request_token");
+        const statusParam = params.get("status");
+        if (requestToken && (!statusParam || statusParam === "success")) {
+          setKiteBusy(true);
+          setKiteError("");
+          try {
+            await exchangeKiteRequestToken(requestToken);
+            if (active) {
+              toast.success("Zerodha Kite connected (read-only, encrypted token stored)");
+            }
+          } catch (err) {
+            if (active) {
+              setKiteError(err.message || "Could not complete Zerodha Kite token exchange.");
+            }
+          } finally {
+            // Strip single-use request_token from browser URL immediately
+            const cleanUrl = window.location.pathname;
+            window.history.replaceState({}, "", cleanUrl);
+            if (active) setKiteBusy(false);
+          }
+        }
+      }
+      if (active) await loadKiteStatus();
+    }
+    initKite();
+    return () => {
+      active = false;
+    };
+  }, [loadKiteStatus]);
+
+  async function handleConnectZerodha() {
+    setKiteError("");
+    setKiteBusy(true);
+    try {
+      const { login_url } = await fetchKiteLoginUrl();
+      window.location.href = login_url;
+    } catch (err) {
+      setKiteError(err.message || "Could not start Zerodha Kite OAuth login.");
+      setKiteBusy(false);
+    }
+  }
+
+  async function handleSyncZerodha() {
+    setKiteError("");
+    setError("");
+    setDiagnosisResult(null);
+    setKiteBusy(true);
+    try {
+      const anonymized = await syncKiteTrades();
+      setParsed(anonymized);
+      setSelectedTradeId(anonymized.trades[0]?.id || null);
+      toast.success(
+        `Synced & anonymized ${anonymized.trades.length} trades from Zerodha Kite (read-only)`
+      );
+      await loadKiteStatus();
+    } catch (err) {
+      if (err.needsReconnect) {
+        setKiteStatus((prev) => ({ ...(prev || {}), needs_reconnect: true }));
+      }
+      setKiteError(err.message || "Could not sync Zerodha Kite trades.");
+    } finally {
+      setKiteBusy(false);
+    }
+  }
+
+  async function handleDisconnectZerodha() {
+    setKiteError("");
+    setKiteBusy(true);
+    try {
+      await disconnectKite();
+      setKiteStatus((prev) => ({
+        ...(prev || {}),
+        connected: false,
+        needs_reconnect: false,
+        connected_at: null,
+        expires_at: null,
+        last_synced_at: null,
+      }));
+      toast.info("Zerodha Kite disconnected and encrypted token deleted immediately");
+    } catch (err) {
+      setKiteError(err.message || "Could not disconnect Zerodha Kite.");
+    } finally {
+      setKiteBusy(false);
+    }
+  }
 
   function processCsvText(csvText, label = "Tradebook") {
     setError("");
@@ -433,42 +652,209 @@ export default function TraderProfiler({ onJumpToTeachBack, onBack }) {
         </Card>
       )}
 
-      {/* Option 2 Roadmap Card — Static UI Only (No OAuth / No Live Broker API Calls) */}
-      <Card className="opacity-85">
+      {/* Option 2: Direct Read-Only Broker Sync (Zerodha Kite Connect LIVE + Angel One Roadmap) */}
+      <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <Badge variant="secondary">
+            <Badge variant="default">
               <Link2 className="h-3.5 w-3.5" /> Direct Broker Sync
             </Badge>
-            <Badge variant="outline" className="text-[10.5px]">
-              Coming Soon · Roadmap
+            <Badge variant="success" className="text-[10.5px]">
+              <Lock className="h-3 w-3" /> Read-Only · Encrypted Token · Identical Anonymization
             </Badge>
           </div>
-          <CardTitle className="text-lg">Read-Only Zerodha Kite Connect &amp; Angel One SmartAPI</CardTitle>
+          <CardTitle className="text-lg">Read-Only Broker Integrations (Zerodha Kite &amp; Angel One SmartAPI)</CardTitle>
           <CardDescription>
-            Future direct read-only broker OAuth integration (requires broker developer approval and
-            commercial API tiers). Will extract the same zero-PII behavioral ratios automatically.
+            Optional alternatives to manual CSV upload. No broker passwords or PINs are ever stored,
+            no trading/write permissions are requested, and live data runs through the exact same
+            anonymization pipeline as CSV uploads.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="rounded-xl border border-dashed border-border bg-muted/30 p-4 space-y-1">
-              <div className="flex items-center justify-between">
+            {/* Zerodha Kite Connect — Live Read-Only Integration */}
+            <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
                 <span className="font-bold text-sm text-foreground">Zerodha Kite Connect</span>
-                <Badge variant="secondary" className="text-[10px]">Coming Soon</Badge>
+                {kiteLoading ? (
+                  <Badge variant="secondary" className="text-[10px]">Checking...</Badge>
+                ) : kiteStatus?.connected && kiteStatus?.needs_reconnect ? (
+                  <Badge variant="warning" className="text-[10px]">Session Expired</Badge>
+                ) : kiteStatus?.connected ? (
+                  <Badge variant="success" className="text-[10px]">Connected (Read-Only)</Badge>
+                ) : (
+                  <Badge variant="default" className="text-[10px]">Read-Only OAuth</Badge>
+                )}
               </div>
-              <p className="text-xs text-muted-foreground">
-                Read-only order &amp; position telemetry without persisting Client ID or ₹ net worth.
+
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Pulls read-only trades, orders &amp; holdings, encrypts the session token with
+                AES-256-GCM, and strips all symbols, IDs, and ₹ figures before any agent sees it.
               </p>
+
+              {kiteError && <ErrorBanner message={kiteError} />}
+
+              <div className="flex items-center gap-2 flex-wrap pt-1">
+                {!kiteStatus?.connected || kiteStatus?.needs_reconnect ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={kiteBusy || kiteLoading}
+                    onClick={handleConnectZerodha}
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    {kiteBusy
+                      ? "Connecting..."
+                      : kiteStatus?.needs_reconnect
+                        ? "Reconnect Zerodha"
+                        : "Connect Zerodha"}
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={kiteBusy}
+                    onClick={handleSyncZerodha}
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${kiteBusy ? "animate-spin" : ""}`} />
+                    {kiteBusy ? "Syncing..." : "Sync & Anonymize Trades"}
+                  </Button>
+                )}
+
+                {kiteStatus?.connected && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={kiteBusy}
+                    onClick={handleDisconnectZerodha}
+                  >
+                    <Unlink className="h-3.5 w-3.5" /> Disconnect
+                  </Button>
+                )}
+              </div>
+
+              {!kiteLoading && kiteStatus && !kiteStatus.configured && (
+                <p className="text-[11px] font-mono text-muted-foreground">
+                  Set KITE_API_KEY &amp; KITE_API_SECRET in backend/.env to enable live OAuth.
+                </p>
+              )}
             </div>
-            <div className="rounded-xl border border-dashed border-border bg-muted/30 p-4 space-y-1">
-              <div className="flex items-center justify-between">
+
+            {/* Angel One SmartAPI — Live Read-Only TOTP Integration */}
+            <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
                 <span className="font-bold text-sm text-foreground">Angel One SmartAPI</span>
-                <Badge variant="secondary" className="text-[10px]">Coming Soon</Badge>
+                {angelLoading ? (
+                  <Badge variant="secondary" className="text-[10px]">Checking...</Badge>
+                ) : angelStatus?.connected && angelStatus?.needs_reconnect ? (
+                  <Badge variant="warning" className="text-[10px]">Session Expired</Badge>
+                ) : angelStatus?.connected ? (
+                  <Badge variant="success" className="text-[10px]">Connected (Read-Only)</Badge>
+                ) : (
+                  <Badge variant="default" className="text-[10px]">Read-Only TOTP</Badge>
+                )}
               </div>
-              <p className="text-xs text-muted-foreground">
-                Read-only tradebook ratio sync to auto-queue targeted NISM concept checks.
+
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Uses official SmartAPI TOTP auth, encrypts only the session JWT with AES-256-GCM
+                (never stores MPIN/TOTP), and anonymizes identically to CSV uploads.
               </p>
+
+              {angelError && <ErrorBanner message={angelError} />}
+
+              {showAngelForm && (!angelStatus?.connected || angelStatus?.needs_reconnect) ? (
+                <form onSubmit={handleConnectAngel} className="space-y-2.5 pt-1">
+                  <Input
+                    type="text"
+                    placeholder="Angel One Client Code (never stored)"
+                    value={angelClientCode}
+                    onChange={(e) => setAngelClientCode(e.target.value)}
+                    required
+                    disabled={angelBusy}
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      type="password"
+                      placeholder="MPIN (never stored)"
+                      value={angelPin}
+                      onChange={(e) => setAngelPin(e.target.value)}
+                      required
+                      disabled={angelBusy}
+                    />
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      placeholder="6-digit TOTP"
+                      value={angelTotp}
+                      onChange={(e) => setAngelTotp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                      required
+                      disabled={angelBusy}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button type="submit" size="sm" disabled={angelBusy}>
+                      {angelBusy ? "Connecting..." : "Authorize Read-Only"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={angelBusy}
+                      onClick={() => {
+                        setShowAngelForm(false);
+                        setAngelPin("");
+                        setAngelTotp("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              ) : (
+                <div className="flex items-center gap-2 flex-wrap pt-1">
+                  {!angelStatus?.connected || angelStatus?.needs_reconnect ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={angelBusy || angelLoading}
+                      onClick={() => setShowAngelForm(true)}
+                    >
+                      <Lock className="h-3.5 w-3.5" />
+                      {angelStatus?.needs_reconnect ? "Reconnect Angel One" : "Connect Angel One"}
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={angelBusy}
+                      onClick={handleSyncAngel}
+                    >
+                      <RefreshCw className={`h-3.5 w-3.5 ${angelBusy ? "animate-spin" : ""}`} />
+                      {angelBusy ? "Syncing..." : "Sync & Anonymize Trades"}
+                    </Button>
+                  )}
+
+                  {angelStatus?.connected && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={angelBusy}
+                      onClick={handleDisconnectAngel}
+                    >
+                      <Unlink className="h-3.5 w-3.5" /> Disconnect
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              {!angelLoading && angelStatus && !angelStatus.configured && (
+                <p className="text-[11px] font-mono text-muted-foreground">
+                  Set ANGEL_SMARTAPI_KEY in backend/.env to enable live SmartAPI sync.
+                </p>
+              )}
             </div>
           </div>
         </CardContent>

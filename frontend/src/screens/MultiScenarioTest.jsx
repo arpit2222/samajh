@@ -30,7 +30,7 @@ import { Spinner } from "../components/ui/spinner.jsx";
 import { Progress } from "../components/ui/progress.jsx";
 import MathVerificationCard from "../components/MathVerificationCard.jsx";
 
-export default function MultiScenarioTest({ onExit }) {
+export default function MultiScenarioTest({ onOpenLeaderboard, onExit }) {
   const [scenarios, setScenarios] = useState([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState({});
@@ -151,9 +151,16 @@ export default function MultiScenarioTest({ onExit }) {
           <Button type="button" variant="outline" onClick={onExit}>
             Back to Main Flow
           </Button>
-          <Button type="button" onClick={loadBank}>
-            <RotateCcw className="h-4 w-4" /> Reshuffle &amp; Retry Gauntlet
-          </Button>
+          <div className="flex items-center gap-2 flex-col sm:flex-row">
+            {onOpenLeaderboard && (
+              <Button type="button" variant="secondary" onClick={onOpenLeaderboard}>
+                <Trophy className="h-4 w-4" /> View Leaderboard
+              </Button>
+            )}
+            <Button type="button" onClick={loadBank}>
+              <RotateCcw className="h-4 w-4" /> Reshuffle &amp; Retry Gauntlet
+            </Button>
+          </div>
         </CardFooter>
       </Card>
     );

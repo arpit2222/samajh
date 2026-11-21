@@ -40,12 +40,17 @@ router.post("/start-teachback", async (req, res, next) => {
 
     const uid = req.headers["x-firebase-uid"]?.toString().trim() || null;
     const userEmail = req.headers["x-firebase-email"]?.toString().trim() || null;
+    const externalUserRef =
+      typeof req.body?.external_user_ref === "string"
+        ? req.body.external_user_ref.trim() || null
+        : null;
     const sessionId = crypto.randomUUID();
 
     await createSession({
       sessionId,
       uid,
       userEmail,
+      externalUserRef,
       rawText: mapped.concept,
       concept: mapped.concept,
       analogy: mapped.analogy,

@@ -1,6 +1,8 @@
 import { callGeminiJSON } from "./geminiClient.js";
 import { retrieveNismGrounding, formatGroundingBlock } from "../tools/nismGrounding.js";
 import { runAdkCodeExecutionCheck } from "../tools/adkCodeExec.js";
+import { resolveLanguage } from "../tools/languages.js";
+import { SERIES_I_WEAK_SUBTOPICS, SERIES_VA_WEAK_SUBTOPICS } from "../tools/nismModules.js";
 
 const examinerResponseSchema = {
   type: "OBJECT",
@@ -30,12 +32,19 @@ const examinerResponseSchema = {
  * Grades ONLY the learner's turns, grounded against NISM workbook references (Vertex AI Search / RAG),
  * and runs ADK BuiltInCodeExecutor for verified ₹ margin/payoff calculations.
  */
-export async function examinerAgent({ concept, turns = [] } = {}) {
+export async function examinerAgent({
+  concept,
+  turns = [],
+  language = "en-IN",
+  moduleId = "series-viii",
+} = {}) {
   if (!concept || typeof concept !== "string") {
     const err = new Error("examinerAgent requires a concept.");
     err.statusCode = 400;
     throw err;
   }
+
+  const langConfig = resolveLanguage(language);
 
   const safeTurns = Array.isArray(turns) ? turns : [];
   const learnerTurns = safeTurns.filter((t) => t.speaker === "user" && t.text?.trim());
@@ -54,9 +63,18 @@ export async function examinerAgent({ concept, turns = [] } = {}) {
     .map((t, i) => `${t.speaker === "user" ? "LEARNER" : "NOVICE PROBE"} [#${i + 1}]: ${t.text}`)
     .join("\n");
 
-  // Retrieve NISM workbook grounding passages before grading
-  const grounding = await retrieveNismGrounding(`${concept} ${learnerOnlyText}`, 2);
+  // Retrieve NISM workbook grounding passages scoped to the active module
+  const grounding = await retrieveNismGrounding(`${concept} ${learnerOnlyText}`, 2, { moduleId });
   const groundingBlock = formatGroundingBlock(grounding);
+
+  const subtopicRule =
+    moduleId === "series-va"
+      ? `4. \`weak_subtopic\` MUST be one of the NISM Series V-A taxonomy values: ${SERIES_VA_WEAK_SUBTOPICS.join(", ")}. NEVER use Series VIII F&O tags or generic advice.\n`
+      : moduleId === "series-i"
+        ? `4. \`weak_subtopic\` MUST be one of the NISM Series I taxonomy values: ${SERIES_I_WEAK_SUBTOPICS.join(", ")}. NEVER use Series VIII equity F&O tags or generic advice.\n`
+        : "4. `weak_subtopic` MUST name a concrete financial mechanism (2-6 words, e.g., 'margin call timing', " +
+          "'overnight gap-down execution', 'short option unlimited downside'). NEVER output generic advice like " +
+          "'needs more practice', 'better explanation', or 'lack of clarity'.\n";
 
   const parsed = await callGeminiJSON({
     systemInstruction:
@@ -71,10 +89,9 @@ export async function examinerAgent({ concept, turns = [] } = {}) {
       "   - 65-84: Grasps the main intuition, but leaves a specific operational/risk mechanism unexplained or fuzzy.\n" +
       "   - 40-64: Surface-level, vague, or misses a critical flaw in the novice's misconception.\n" +
       "   - 0-39: Wrong causal model, dangerous misconception for real capital, or minimal/evasive answers.\n" +
-      "4. `weak_subtopic` MUST name a concrete financial mechanism (2-6 words, e.g., 'margin call timing', " +
-      "'overnight gap-down execution', 'short option unlimited downside'). NEVER output generic advice like " +
-      "'needs more practice', 'better explanation', or 'lack of clarity'.\n" +
-      "5. Do NOT do mental financial arithmetic in prose — a dedicated ADK Code Execution tool computes exact ₹ figures.",
+      subtopicRule +
+      "5. Do NOT do mental financial arithmetic in prose — a dedicated ADK Code Execution tool computes exact ₹ figures.\n" +
+      `6. LANGUAGE REQUIREMENT (${langConfig.code} — ${langConfig.label}): ${langConfig.examinerInstruction}`,
     contents: [
       {
         role: "user",
@@ -101,19 +118,25 @@ export async function examinerAgent({ concept, turns = [] } = {}) {
     : 0;
   const weakSubtopic = String(parsed.weak_subtopic || "core risk mechanism").trim();
 
-  // Compute verified ₹ financial math via ADK BuiltInCodeExecutor (never prose math)
-  const mathVerification = await runAdkCodeExecutionCheck({
-    weak_subtopic: weakSubtopic,
-    concept,
-  });
+  // Compute verified ₹ financial math via ADK BuiltInCodeExecutor for Series VIII Equity F&O
+  const mathVerification =
+    moduleId !== "series-viii"
+      ? null
+      : await runAdkCodeExecutionCheck({
+          weak_subtopic: weakSubtopic,
+          concept,
+        });
 
   return {
     score: clampedScore,
     weak_subtopic: weakSubtopic,
     rationale: String(parsed.rationale || "").trim(),
+    language: langConfig.code,
+    module: moduleId,
     math_verification: mathVerification,
     grounding: {
       engine: grounding.engine,
+      // Citations are ALWAYS preserved verbatim in their original English NISM workbook form
       citations: grounding.passages.map((p) => ({
         id: p.id,
         source: p.source,

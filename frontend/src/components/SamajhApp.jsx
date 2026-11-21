@@ -18,6 +18,7 @@ import {
   FileSpreadsheet,
   ChevronRight,
   KeyRound,
+  MessageSquareText,
 } from "lucide-react";
 import { fetchHealth, setApiUser } from "../api.js";
 import { subscribeToAuth, signOutUser } from "../lib/firebase.js";
@@ -38,6 +39,8 @@ import CredentialProfile from "../screens/CredentialProfile.jsx";
 import EmployerDashboard from "../screens/EmployerDashboard.jsx";
 import EmployerMatches from "../screens/EmployerMatches.jsx";
 import TraderProfiler from "../screens/TraderProfiler.jsx";
+import LeaderboardScreen from "../screens/LeaderboardScreen.jsx";
+import DiscussionCircle from "../screens/DiscussionCircle.jsx";
 
 class DemoErrorBoundary extends React.Component {
   constructor(props) {
@@ -80,7 +83,8 @@ export default function SamajhApp() {
   const [authReady, setAuthReady] = useState(false);
   const [user, setUser] = useState(null); // { uid, displayName, email, photoURL, role: 'trader'|'employer', isGuest }
   const [step, setStep] = useState(1);
-  const [traderView, setTraderView] = useState("flow"); // "flow" | "multi" | "credential" | "profiler"
+  const [traderView, setTraderView] = useState("flow"); // "flow" | "multi" | "leaderboard" | "credential" | "profiler" | "discussion"
+  const [discussionSubtopic, setDiscussionSubtopic] = useState(null);
   const [prefillCaptureText, setPrefillCaptureText] = useState("");
   const [selectedRequisition, setSelectedRequisition] = useState(null);
 
@@ -95,6 +99,12 @@ export default function SamajhApp() {
     if (saved === "dark") {
       setDarkMode(true);
       document.documentElement.classList.add("dark");
+    }
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("request_token")) {
+        setTraderView("profiler");
+      }
     }
   }, []);
 
@@ -306,6 +316,17 @@ export default function SamajhApp() {
                       <Shuffle className="h-3.5 w-3.5" />
                       <span className="hidden sm:inline">Gauntlet</span>
                     </Button>
+                    <Button
+                      type="button"
+                      variant={traderView === "discussion" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() =>
+                        setTraderView((v) => (v === "discussion" ? "flow" : "discussion"))
+                      }
+                    >
+                      <MessageSquareText className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">Circles</span>
+                    </Button>
                   </>
                 )}
 
@@ -478,7 +499,22 @@ export default function SamajhApp() {
                       onBack={() => setTraderView("flow")}
                     />
                   ) : traderView === "multi" ? (
-                    <MultiScenarioTest onExit={() => setTraderView("flow")} />
+                    <MultiScenarioTest
+                      onOpenLeaderboard={() => setTraderView("leaderboard")}
+                      onExit={() => setTraderView("flow")}
+                    />
+                  ) : traderView === "leaderboard" ? (
+                    <LeaderboardScreen
+                      onStartGauntlet={() => setTraderView("multi")}
+                      onBack={() => setTraderView("flow")}
+                    />
+                  ) : traderView === "discussion" ? (
+                    <DiscussionCircle
+                      initialSubtopic={discussionSubtopic || stressResult?.concept_tag}
+                      sessionId={sessionData?.sessionId}
+                      onStartPractice={() => setTraderView("flow")}
+                      onBack={() => setTraderView("flow")}
+                    />
                   ) : (
                     <>
                       {step === 1 && (
@@ -542,6 +578,11 @@ export default function SamajhApp() {
                           stressResult={stressResult}
                           onOpenCredential={() => setTraderView("credential")}
                           onStartMultiScenario={() => setTraderView("multi")}
+                          onOpenLeaderboard={() => setTraderView("leaderboard")}
+                          onOpenDiscussion={(subtopic) => {
+                            setDiscussionSubtopic(subtopic || null);
+                            setTraderView("discussion");
+                          }}
                           onReset={handleResetJourney}
                         />
                       )}

@@ -1,0 +1,37 @@
+[
+  {
+    "id": "nism-i-ch3-futures-pricing-irp",
+    "source": "NISM-Series-I: Currency Derivatives — Chapter 3 (Currency Futures Pricing & Interest Rate Parity)",
+    "topic": "Currency Futures Pricing, Interest Rate Parity & Forward Premium/Discount",
+    "keywords": ["interest rate parity", "irp", "forward premium", "forward discount", "usdinr", "futures pricing", "spot", "differential", "lot size", "1000", "tick size", "carry"],
+    "excerpt": "Exchange-traded currency futures prices are governed by Covered Interest Rate Parity (IRP): F = S × (1 + r_quote × t) / (1 + r_base × t). The currency with the higher interest rate (typically INR relative to USD) trades at a forward discount, meaning USDINR futures normally trade at a premium to spot reflecting the INR–USD interest-rate differential—not merely market speculation. On NSE/BSE, one standard USDINR futures contract has a lot size of USD 1,000 with a minimum tick size of ₹0.0025 (₹2.50 per contract)."
+  },
+  {
+    "id": "nism-i-ch2-fbil-settlement",
+    "source": "NISM-Series-I: Currency Derivatives — Chapter 2 & 3 (FBIL Reference Rate & Cash Settlement)",
+    "topic": "FBIL Reference Rate, Cash Settlement in INR & Expiry Mechanics",
+    "keywords": ["fbil", "rbi reference rate", "cash settlement", "physical delivery", "expiry", "12:30 pm", "two working days", "final settlement", "inr", "last trading day"],
+    "excerpt": "All exchange-traded currency futures and options on NSE/BSE are strictly cash-settled in Indian Rupees (INR)—there is NO physical delivery of USD, EUR, GBP, or JPY upon expiry. The Last Trading Day is two working days prior to the last business day of the expiry month (closing at 12:30 PM), and Final Settlement occurs against the FBIL (Financial Benchmarks India Pvt. Ltd., formerly RBI) Reference Rate published on the expiry day."
+  },
+  {
+    "id": "nism-i-ch5-hedging-basis",
+    "source": "NISM-Series-I: Currency Derivatives — Chapter 5 (Hedging Strategies & Basis Risk)",
+    "topic": "Exporter vs Importer Hedging Direction & Basis Risk",
+    "keywords": ["exporter", "importer", "hedge", "hedging", "receivable", "payable", "appreciation", "depreciation", "short", "long", "basis risk", "maturity mismatch"],
+    "excerpt": "An Indian exporter expecting future USD receivables loses money if INR appreciates (USDINR falls), so they hedge by SELLING (shorting) USDINR futures. Conversely, an Indian importer with future USD payables loses money if INR depreciates (USDINR rises), so they hedge by BUYING (going long) USDINR futures. Because exchange-traded contracts have standardized lot sizes and monthly expiries, any mismatch between the underlying invoice date/amount and the futures contract creates Basis Risk—the risk that spot and futures prices do not move identically."
+  },
+  {
+    "id": "nism-i-ch4-currency-options",
+    "source": "NISM-Series-I: Currency Derivatives — Chapter 4 (Exchange-Traded Currency Options)",
+    "topic": "European-Style Currency Options, Premium Quotation & Writer Margin",
+    "keywords": ["currency option", "european", "american", "call", "put", "premium", "strike", "writer", "seller", "usdinr option", "in the money", "exercise"],
+    "excerpt": "Exchange-traded USDINR options on Indian exchanges are European-style, meaning they can only be exercised on the expiry date (auto-exercised if in-the-money against the FBIL reference rate), never early. Option premiums are quoted in INR per unit of foreign currency (multiplied by the 1,000-unit contract size). While a currency option buyer's risk is capped at the upfront premium paid, an option writer faces asymmetric loss exposure and must post SPAN + Extreme Loss margins with daily MTM."
+  },
+  {
+    "id": "nism-i-ch6-clearing-limits",
+    "source": "NISM-Series-I: Currency Derivatives — Chapter 6 & 8 (Clearing, MTM & RBI/SEBI Position Limits)",
+    "topic": "Daily INR MTM Settlement, Extreme Loss Margin & RBI/SEBI Position Limits",
+    "keywords": ["position limit", "open interest", "extreme loss margin", "span", "mtm", "rbi", "sebi", "underlying exposure", "clearing", "margin"],
+    "excerpt": "Currency derivative positions are Marked-to-Market (MTM) daily in INR against the daily settlement price, with Initial Margin (SPAN) plus Extreme Loss Margin collected upfront by clearing corporations. Under RBI and SEBI frameworks, client-level open interest limits apply across exchanges, and participants taking exchange-traded currency positions are subject to RBI's underlying contracted-exposure and regulatory compliance norms."
+  }
+]

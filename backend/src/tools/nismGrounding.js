@@ -5,10 +5,14 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BACKEND_ROOT = path.resolve(__dirname, "../..");
-const CORPUS_PATH = path.resolve(__dirname, "../data/nismWorkbookCorpus.json");
+const CORPUS_FILES = {
+  "series-viii": path.resolve(__dirname, "../data/nismWorkbookCorpus.json"),
+  "series-va": path.resolve(__dirname, "../data/nismSeries5ACorpus.json"),
+  "series-i": path.resolve(__dirname, "../data/nismSeries1Corpus.json"),
+};
 const DEFAULT_SERVICE_ACCOUNT = path.resolve(BACKEND_ROOT, "service-account.json");
 
-let cachedCorpus = null;
+const cachedCorpora = new Map();
 
 async function fileExists(p) {
   try {
@@ -19,24 +23,31 @@ async function fileExists(p) {
   }
 }
 
-async function loadLocalCorpus() {
-  if (cachedCorpus) return cachedCorpus;
+async function loadLocalCorpus(moduleId = "series-viii") {
+  const key = CORPUS_FILES[moduleId] ? moduleId : "series-viii";
+  if (cachedCorpora.has(key)) return cachedCorpora.get(key);
   try {
-    const raw = await readFile(CORPUS_PATH, "utf-8");
-    cachedCorpus = JSON.parse(raw);
+    const raw = await readFile(CORPUS_FILES[key], "utf-8");
+    const parsed = JSON.parse(raw);
+    cachedCorpora.set(key, parsed);
+    return parsed;
   } catch {
-    cachedCorpus = [];
+    return [];
   }
-  return cachedCorpus;
 }
 
 /**
  * Query Google Cloud Vertex AI Search (Discovery Engine REST API) when configured via:
  *   GOOGLE_CLOUD_PROJECT + VERTEX_SEARCH_DATASTORE_ID (+ optional VERTEX_SEARCH_LOCATION, default "global")
  */
-async function queryVertexAiSearch(queryText, topK = 2) {
+async function queryVertexAiSearch(queryText, topK = 2, { moduleId = "series-viii" } = {}) {
   const project = process.env.GOOGLE_CLOUD_PROJECT?.trim();
-  const dataStoreId = process.env.VERTEX_SEARCH_DATASTORE_ID?.trim();
+  const dataStoreId =
+    moduleId === "series-va"
+      ? process.env.VERTEX_SEARCH_DATASTORE_ID_VA?.trim()
+      : moduleId === "series-i"
+        ? process.env.VERTEX_SEARCH_DATASTORE_ID_I?.trim()
+        : process.env.VERTEX_SEARCH_DATASTORE_ID?.trim();
   if (!project || !dataStoreId) return null;
 
   const location = process.env.VERTEX_SEARCH_LOCATION?.trim() || "global";
@@ -120,23 +131,28 @@ async function queryVertexAiSearch(queryText, topK = 2) {
  *
  * Returns { engine: "vertex-ai-search" | "nism-workbook-rag", passages: [...] }
  */
-export async function retrieveNismGrounding(queryText, topK = 2) {
+export async function retrieveNismGrounding(
+  queryText,
+  topK = 2,
+  { moduleId = "series-viii" } = {}
+) {
   const cleaned = String(queryText || "").trim();
   if (!cleaned) {
-    return { engine: "nism-workbook-rag", passages: [] };
+    return { engine: "nism-workbook-rag", module: moduleId, passages: [] };
   }
 
-  // 1. Live Vertex AI Search if datastore env vars are configured
-  const vertexHits = await queryVertexAiSearch(cleaned, topK);
+  // 1. Live Vertex AI Search if datastore env vars are configured for this module
+  const vertexHits = await queryVertexAiSearch(cleaned, topK, { moduleId });
   if (vertexHits && vertexHits.length > 0) {
     return {
       engine: "vertex-ai-search",
+      module: moduleId,
       passages: vertexHits,
     };
   }
 
-  // 2. Local curated NISM Series VIII workbook RAG corpus fallback
-  const corpus = await loadLocalCorpus();
+  // 2. Local curated NISM workbook RAG corpus fallback (Series VIII or Series V-A)
+  const corpus = await loadLocalCorpus(moduleId);
   const lower = cleaned.toLowerCase();
 
   const scored = corpus

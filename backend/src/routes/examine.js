@@ -22,10 +22,14 @@ router.post("/", async (req, res, next) => {
       return res.status(404).json({ error: "Session not found. Please start again from Capture." });
     }
 
+    const sessionLanguage = session.language || "en-IN";
+    const sessionModule = session.nismModule || "series-viii";
     const { state, adk_trace } = await runSamajhPipeline({
       activeStages: ["examiner"],
       concept: session.concept,
       turns: session.turns || [],
+      language: sessionLanguage,
+      nismModule: sessionModule,
     });
 
     const result = state.examiner_result;
@@ -34,12 +38,14 @@ router.post("/", async (req, res, next) => {
       examinerScore: result.score,
       weakSubtopic: result.weak_subtopic,
       rationale: result.rationale,
+      examinerRationale: result.rationale,
     });
 
     return res.status(200).json({
       score: result.score,
       weak_subtopic: result.weak_subtopic,
       rationale: result.rationale,
+      language: sessionLanguage,
       math_verification: result.math_verification,
       grounding: result.grounding,
       adk_trace,

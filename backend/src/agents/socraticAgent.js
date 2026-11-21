@@ -1,4 +1,5 @@
 import { callGeminiJSON } from "./geminiClient.js";
+import { resolveLanguage } from "../tools/languages.js";
 
 export const MAX_AGENT_TURNS = 3;
 
@@ -23,12 +24,19 @@ const socraticResponseSchema = {
  *   - Later turns (2nd & 3rd): probe the specific gap in what the learner just said.
  *   - Cap at 3 agent turns — after that return { reply: null, done: true }.
  */
-export async function socraticAgent({ concept, turns = [] } = {}) {
+export async function socraticAgent({
+  concept,
+  turns = [],
+  language = "en-IN",
+  moduleId = "series-viii",
+} = {}) {
   if (!concept || typeof concept !== "string") {
     const err = new Error("socraticAgent requires a concept.");
     err.statusCode = 400;
     throw err;
   }
+
+  const langConfig = resolveLanguage(language);
 
   const safeTurns = Array.isArray(turns) ? turns : [];
   const agentTurnCount = safeTurns.filter((t) => t.speaker === "agent").length;
@@ -50,11 +58,17 @@ export async function socraticAgent({ concept, turns = [] } = {}) {
           .join("\n")
       : "(No turns yet — you are opening the conversation.)";
 
+  const personaDomain =
+    moduleId === "series-va"
+      ? "NISM Series V-A (Mutual Fund Distributors) — e.g., assuming a ₹10 NFO NAV is cheaper than ₹100 NAV, thinking IDCW dividends are extra bonus returns, or treating debt funds like risk-free FDs"
+      : moduleId === "series-i"
+        ? "NISM Series I (Currency Derivatives) — e.g., assuming USDINR futures settle via physical USD delivery instead of INR cash against the FBIL rate, mixing up exporter vs importer hedge direction, or thinking spot rates alone determine futures prices without interest-rate parity"
+        : "NISM / Indian F&O markets — e.g., assuming a stop-loss guarantees your exit price, thinking futures losses only get settled on expiry day, or confusing option buyer vs seller risk";
+
   const turnRule =
     nextAgentTurn === 1
       ? "THIS IS YOUR FIRST TURN (Turn 1 of 3). Restate the target concept SLIGHTLY WRONG ON PURPOSE — " +
-        "introduce one subtle, realistic retail-trader misconception (for example, assuming a stop-loss guarantees your exit price, " +
-        "or thinking futures losses only get settled on expiry day, or confusing option buyer vs seller risk). " +
+        `introduce one subtle, realistic learner misconception (${personaDomain}). ` +
         "Ask the learner casually if you got that right."
       : `THIS IS TURN ${nextAgentTurn} OF 3. Do NOT repeat your earlier question and do NOT lecture or reveal the right answer. ` +
         "Look closely at what the learner just said, spot the specific gap, hand-wave, or edge case they skipped, " +
@@ -66,6 +80,7 @@ export async function socraticAgent({ concept, turns = [] } = {}) {
       "You play a curious, slightly confused novice studying for NISM / Indian F&O markets. " +
       "Never give textbook definitions, never praise with 'Great job!', and never tell the learner if they are right or wrong. " +
       "Keep every reply crisp (2-3 sentences, max ~65 words) and natural.\n\n" +
+      `LANGUAGE REQUIREMENT (${langConfig.code} — ${langConfig.label}):\n${langConfig.socraticInstruction}\n\n` +
       `TARGET CONCEPT:\n${concept}\n\n` +
       `TURN INSTRUCTION:\n${turnRule}`,
     contents: [

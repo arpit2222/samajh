@@ -1,0 +1,37 @@
+[
+  {
+    "id": "nism-va-ch6-nav-cutoffs",
+    "source": "NISM-Series-V-A: Mutual Fund Distributors — Chapter 6 & 7 (NAV Valuation & Cut-Off Timings)",
+    "topic": "Net Asset Value (NAV), Daily Valuation & Applicable Cut-Off Timings",
+    "keywords": ["nav", "net asset value", "cut-off", "cutoff", "3:00 pm", "realization", "nfo", "cheap", "units", "allotment", "valuation", "closing", "liquid"],
+    "excerpt": "Net Asset Value (NAV) per unit is computed daily at market close as (Market Value of Scheme Investments + Receivables + Accrued Income - Liabilities - Accrued Expenses) divided by Outstanding Units. Under SEBI uniform cut-off rules, for equity and debt schemes (other than liquid/overnight), the applicable NAV is the closing NAV of the business day on which BOTH the application is received before 3:00 PM AND funds are realized and available for utilization by the AMC. A lower absolute NAV (such as a ₹10 NFO) does NOT make a fund cheaper or offer higher return potential than a ₹100 NAV fund; returns depend solely on the percentage growth of the underlying portfolio."
+  },
+  {
+    "id": "nism-va-ch6-ter-exitload",
+    "source": "NISM-Series-V-A: Mutual Fund Distributors — Chapter 6 (Total Expense Ratio & Exit Load)",
+    "topic": "Total Expense Ratio (TER), Direct vs Regular Plans & Exit Load",
+    "keywords": ["ter", "expense ratio", "direct", "regular", "commission", "trail", "exit load", "redemption", "aum", "slab", "accrued", "nav"],
+    "excerpt": "Total Expense Ratio (TER) represents the annual recurring expenses charged to a mutual fund scheme as a percentage of daily net assets, capped by SEBI on a slab-based AUM scale (lower TER caps as AUM grows). TER is accrued daily and deducted from scheme assets BEFORE the daily NAV is declared, so published NAVs are already net of expenses. Direct Plans exclude distributor trail commissions and therefore carry a lower TER and higher NAV than Regular Plans of the exact same portfolio. Exit load is a redemption charge levied on early exits (e.g., within 1 year) and must be credited back to the scheme to protect continuing investors."
+  },
+  {
+    "id": "nism-va-ch9-debt-duration-credit",
+    "source": "NISM-Series-V-A: Mutual Fund Distributors — Chapter 8 & 9 (Debt Fund Risk: Duration & Credit)",
+    "topic": "Debt Fund Interest-Rate Risk (Modified Duration) & Credit Risk / Side-Pocketing",
+    "keywords": ["debt", "bond", "yield", "interest rate", "duration", "modified duration", "macaulay", "credit risk", "downgrade", "default", "side-pocket", "segregated portfolio", "gilt"],
+    "excerpt": "Debt mutual funds are NOT risk-free fixed deposits; their NAV fluctuates daily with market interest rates and issuer credit quality. Bond prices move inversely to interest rates: when RBI hikes rates or yields rise, existing bond prices fall, and funds with higher Modified Duration suffer larger NAV drops (approximately Modified Duration × change in yield). Credit risk arises when an issuer is downgraded or defaults; SEBI permits AMCs to create a Segregated Portfolio (side-pocket) to ring-fence distressed debt so existing investors retain recovery rights while preventing new/exiting investors from arbitraging the bad asset."
+  },
+  {
+    "id": "nism-va-ch5-idcw-sip",
+    "source": "NISM-Series-V-A: Mutual Fund Distributors — Chapter 5 & 7 (SIP, IDCW vs Growth Options)",
+    "topic": "IDCW (Dividend) vs Growth Option & SIP Rupee-Cost Averaging",
+    "keywords": ["idcw", "dividend", "growth", "sip", "rupee cost averaging", "compounding", "payout", "reinvestment", "tax", "capital", "systematic"],
+    "excerpt": "In the Growth option, all realized and unrealized gains remain invested in the scheme and compound inside the NAV. In the IDCW (Income Distribution cum Capital Withdrawal) option, payouts are distributed directly out of the scheme's own accumulated surplus/capital, causing the ex-IDCW NAV to fall by the exact payout amount — IDCW is NOT an extra bonus over and above the fund's return, and is taxed at the investor's slab rate. A Systematic Investment Plan (SIP) applies rupee-cost averaging by buying more units when NAVs are lower and fewer when NAVs are higher, reducing timing risk, though SIP does not guarantee profits in a continuously falling market."
+  },
+  {
+    "id": "nism-va-ch10-categorization-riskometer",
+    "source": "NISM-Series-V-A: Mutual Fund Distributors — Chapter 2 & 10 (SEBI Scheme Categorization & Risk-o-Meter)",
+    "topic": "SEBI Mutual Fund Scheme Categorization & Six-Level Risk-o-Meter",
+    "keywords": ["sebi", "categorization", "large cap", "mid cap", "small cap", "riskometer", "risk-o-meter", "true to label", "benchmark", "tri", "equity", "hybrid"],
+    "excerpt": "SEBI's scheme categorization norms enforce true-to-label mandates: Large Cap stocks are ranks 1–100 by full market capitalization, Mid Cap are 101–250, and Small Cap are 251 onwards (Large Cap funds must hold at least 80% in large caps; Mid/Small Cap funds at least 65% in their respective buckets). Every scheme must display a monthly-evaluated six-level Risk-o-Meter (Low, Low to Moderate, Moderate, Moderately High, High, Very High) and benchmark performance against the Total Return Index (TRI), which includes dividends reinvested."
+  }
+]

@@ -187,36 +187,60 @@ export default function ScoreReveal({ sessionData, examResult, onStartStressTest
           </div>
         )}
 
-        {/* Live Stage 2 Callout */}
-        <div className="rounded-2xl border border-amber-200 dark:border-amber-500/35 bg-amber-50/80 dark:bg-amber-500/10 p-5 flex items-start gap-3.5">
-          <div className="h-10 w-10 rounded-xl bg-amber-100 dark:bg-amber-500/20 border border-amber-300 dark:border-amber-500/35 flex items-center justify-center text-amber-700 dark:text-amber-300 shrink-0">
-            <Flame className="h-5 w-5" />
-          </div>
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <p className="text-sm font-bold text-amber-950 dark:text-amber-100">
-                Up Next: Real Historical Market Stress-Test
-              </p>
-              <Badge variant="warning" className="text-[10px]">
-                <ShieldCheck className="h-3 w-3" /> Ground Truth · Not Simulated
-              </Badge>
+        {/* Live Stage 2 Callout (Series VIII) OR Mutual-Fund Completion Note (Series V-A) */}
+        {sessionData?.hasStressTest === false ? (
+          <div className="rounded-2xl border border-emerald-200 dark:border-emerald-500/35 bg-emerald-50/75 dark:bg-emerald-500/10 p-5 flex items-start gap-3.5">
+            <div className="h-10 w-10 rounded-xl bg-emerald-100 dark:bg-emerald-500/20 border border-emerald-300 dark:border-emerald-500/35 flex items-center justify-center text-emerald-700 dark:text-emerald-300 shrink-0">
+              <ShieldCheck className="h-5 w-5" />
             </div>
-            <p className="text-xs sm:text-[13px] text-amber-900/85 dark:text-amber-200/85 leading-relaxed">
-              No fake P&amp;L luck — Samajh retrieves a real, dated Indian market shock tied to{" "}
-              <strong>&ldquo;{examResult.weak_subtopic}&rdquo;</strong> and grades your reasoning
-              about what happens to an open position.
-            </p>
+            <div className="space-y-1">
+              <p className="text-sm font-bold text-emerald-950 dark:text-emerald-100">
+                {sessionData?.module === "series-i"
+                  ? "NISM Series I Verification Complete"
+                  : "NISM Series V-A Verification Complete"}
+              </p>
+              <p className="text-xs sm:text-[13px] text-emerald-900/85 dark:text-emerald-200/85 leading-relaxed">
+                {sessionData?.module === "series-i"
+                  ? "Currency Derivatives (Series I) concepts are grounded directly in NISM Series I workbook citations."
+                  : "Mutual Fund (Series V-A) concepts are grounded directly in NISM Series V-A workbook citations without F&O historical-shock stress tests."}{" "}
+                Revisit <strong>&ldquo;{examResult.weak_subtopic}&rdquo;</strong> or verify another
+                concept.
+              </p>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="rounded-2xl border border-amber-200 dark:border-amber-500/35 bg-amber-50/80 dark:bg-amber-500/10 p-5 flex items-start gap-3.5">
+            <div className="h-10 w-10 rounded-xl bg-amber-100 dark:bg-amber-500/20 border border-amber-300 dark:border-amber-500/35 flex items-center justify-center text-amber-700 dark:text-amber-300 shrink-0">
+              <Flame className="h-5 w-5" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-sm font-bold text-amber-950 dark:text-amber-100">
+                  Up Next: Real Historical Market Stress-Test
+                </p>
+                <Badge variant="warning" className="text-[10px]">
+                  <ShieldCheck className="h-3 w-3" /> Ground Truth · Not Simulated
+                </Badge>
+              </div>
+              <p className="text-xs sm:text-[13px] text-amber-900/85 dark:text-amber-200/85 leading-relaxed">
+                No fake P&amp;L luck — Samajh retrieves a real, dated Indian market shock tied to{" "}
+                <strong>&ldquo;{examResult.weak_subtopic}&rdquo;</strong> and grades your reasoning
+                about what happens to an open position.
+              </p>
+            </div>
+          </div>
+        )}
       </CardContent>
 
       <CardFooter className="flex-col-reverse sm:flex-row items-stretch sm:items-center">
         <Button type="button" variant="outline" onClick={onReset}>
-          <RotateCcw className="h-4 w-4" /> Start Over
+          <RotateCcw className="h-4 w-4" /> {sessionData?.hasStressTest === false ? "Verify Another Concept" : "Start Over"}
         </Button>
-        <Button type="button" size="lg" onClick={onStartStressTest}>
-          Enter Consequence Stress-Test <ArrowRight className="h-4 w-4" />
-        </Button>
+        {sessionData?.hasStressTest !== false && (
+          <Button type="button" size="lg" onClick={onStartStressTest}>
+            Enter Consequence Stress-Test <ArrowRight className="h-4 w-4" />
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );

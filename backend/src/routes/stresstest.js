@@ -1,7 +1,14 @@
 import { Router } from "express";
+import crypto from "node:crypto";
 import { retrieveScenario } from "../agents/stressTestAgent.js";
 import { runSamajhPipeline } from "../agents/samajhPipeline.js";
-import { getSession, listScenarios, updateSession } from "../db/firestore.js";
+import {
+  createGauntletRunRecord,
+  getSession,
+  listScenarios,
+  updateSession,
+} from "../db/firestore.js";
+import { evaluateAndClearSafeguard } from "../services/safeguardClearance.js";
 
 const router = Router();
 
@@ -68,10 +75,13 @@ router.post("/", async (req, res, next) => {
     if (reasoningInput === null) {
       return res.status(200).json({
         sessionId,
+        id: scenario.id || null,
         concept_tag: scenario.concept_tag,
         event: scenario.event,
         date: scenario.date,
         scenario_text: scenario.what_happened,
+        source: scenario.source || null,
+        shock_chart: scenario.shock_chart || null,
         weak_subtopic: session.weakSubtopic,
         prompt_question: buildPromptQuestion(scenario.concept_tag),
       });
@@ -104,12 +114,23 @@ router.post("/", async (req, res, next) => {
       combinedMasteryScore,
     });
 
+    // Reuse this exact 50/50 Combined Mastery Score to clear any matching broker safeguard risk flag
+    const clearance = await evaluateAndClearSafeguard({
+      session: { ...session, uid },
+      matchedConceptTag: result.concept_tag,
+      examinerScore,
+      stressScore: result.stress_score,
+      combinedMasteryScore,
+    });
+
     return res.status(200).json({
       sessionId,
       ...result,
       examiner_score: examinerScore,
       combined_mastery_score: combinedMasteryScore,
       concept_to_revisit: session.weakSubtopic || result.concept_tag,
+      safeguard_cleared: clearance.cleared,
+      cleared_credential_id: clearance.credential_id,
       adk_trace,
     });
   } catch (err) {
@@ -183,7 +204,27 @@ router.post("/multi", async (req, res, next) => {
 
     const weakest = [...results].sort((a, b) => a.stress_score - b.stress_score)[0];
 
+    const uid = req.headers["x-firebase-uid"]?.toString().trim() || null;
+    const isGuest = !uid;
+    const scenarioSetId =
+      typeof req.body?.scenario_set_id === "string" && req.body.scenario_set_id.trim()
+        ? req.body.scenario_set_id.trim().slice(0, 64)
+        : "nism-viii-gauntlet";
+
+    const runRecord = await createGauntletRunRecord({
+      id: `gr_${crypto.randomUUID()}`,
+      userId: uid || `guest_${crypto.randomUUID().slice(0, 12)}`,
+      isGuest,
+      composite_score: compositeScore,
+      scenario_set_id: scenarioSetId,
+      total_scenarios: results.length,
+      completed_at: new Date().toISOString(),
+    });
+
     return res.status(200).json({
+      run_id: runRecord.id,
+      scenario_set_id: runRecord.scenario_set_id,
+      completed_at: runRecord.completed_at,
       composite_score: compositeScore,
       total_scenarios: results.length,
       weakest_event: weakest?.event || "",

@@ -28,20 +28,20 @@ async function runFullStage3Tests() {
     ["IngestAgent", "ConceptAgent", "SocraticAgent", "ExaminerAgent", "StressTestAgent"]
   );
 
-  // 2. Verify scenarioBank.json contains 4 verified Indian market events + general_market_risk fallback
+  // 2. Verify scenarioBank.json contains 25+ verified Indian market events + general_market_risk fallback
   const bankRaw = await readFile(new URL("../src/data/scenarioBank.json", import.meta.url), "utf-8");
   const bank = JSON.parse(bankRaw);
-  assert.equal(bank.length, 5, "scenarioBank.json must contain 4 real events + 1 general_market_risk fallback");
-  assert.deepEqual(
-    bank.map((s) => s.concept_tag),
-    [
-      "circuit_breaker_margin_risk",
-      "overnight_gap_stoploss_risk",
-      "event_volatility_option_writing_risk",
-      "regulatory_moratorium_liquidity_risk",
-      "general_market_risk",
-    ]
-  );
+  assert.ok(bank.length >= 25, `scenarioBank.json must contain 25+ verified events + fallback (got ${bank.length})`);
+  const uniqueTags = new Set(bank.map((s) => s.concept_tag));
+  for (const requiredTag of [
+    "circuit_breaker_margin_risk",
+    "overnight_gap_stoploss_risk",
+    "event_volatility_option_writing_risk",
+    "regulatory_moratorium_liquidity_risk",
+    "general_market_risk",
+  ]) {
+    assert.ok(uniqueTags.has(requiredTag), `Missing required scenario concept_tag: ${requiredTag}`);
+  }
 
   // 3. Verify deterministic RAG scenario retrieval + general_market_risk fallback
   const marginMatch = await retrieveScenario({ weak_subtopic: "margin call timing", scenarios: bank });

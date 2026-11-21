@@ -40,11 +40,100 @@ function formatEventDate(isoDate) {
 
 /**
  * Crisp zero-dependency inline SVG historical price-shock illustration.
- * Reflects the verified real figures from scenarioBank.json.
+ * Data-driven from scenarioBank.json's `shock_chart` so all 25+ curated historical
+ * Indian market events render accurately (and general_market_risk returns null).
  */
-function HistoricalShockVisual({ conceptTag }) {
+function HistoricalShockVisual({ conceptTag, shockChart, date, source }) {
   if (conceptTag === "general_market_risk") {
     return null;
+  }
+
+  if (shockChart && Array.isArray(shockChart.points) && shockChart.points.length >= 2) {
+    const pathD = shockChart.points
+      .map(([x, y], idx) => `${idx === 0 ? "M" : "L"} ${x} ${y}`)
+      .join(" ");
+    const [lastX, lastY] = shockChart.points[shockChart.points.length - 1];
+    const [firstX] = shockChart.points[0];
+    const areaD = `${pathD} L ${lastX} 112 L ${firstX} 112 Z`;
+    const thresholdY = Number.isFinite(shockChart.threshold_y) ? shockChart.threshold_y : 52;
+
+    return (
+      <div className="rounded-xl border border-rose-200/80 dark:border-rose-500/25 bg-card p-4 space-y-2">
+        <div className="flex items-center justify-between text-[11px] font-mono text-muted-foreground flex-wrap gap-1">
+          <span className="font-semibold text-foreground">
+            {shockChart.instrument} · {formatEventDate(date)}
+          </span>
+          <span className="text-rose-600 dark:text-rose-400 font-bold">
+            {shockChart.headline_stat}
+          </span>
+        </div>
+        <svg
+          viewBox="0 0 420 118"
+          className="w-full h-28 overflow-visible"
+          role="img"
+          aria-label={`${shockChart.instrument} historical shock chart`}
+        >
+          <defs>
+            <linearGradient id="shockChartFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#e11d48" stopOpacity="0.22" />
+              <stop offset="100%" stopColor="#e11d48" stopOpacity="0.0" />
+            </linearGradient>
+          </defs>
+          <line
+            x1="10"
+            y1={thresholdY}
+            x2="408"
+            y2={thresholdY}
+            stroke="#f59e0b"
+            strokeWidth="1.5"
+            strokeDasharray="4 4"
+          />
+          <text
+            x="12"
+            y={Math.max(12, thresholdY - 5)}
+            fontSize="9"
+            fill="currentColor"
+            className="fill-amber-600 dark:fill-amber-400 font-mono"
+          >
+            {shockChart.threshold_label}
+          </text>
+          <path d={areaD} fill="url(#shockChartFill)" />
+          <path
+            d={pathD}
+            fill="none"
+            stroke="#e11d48"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <circle cx={lastX} cy={lastY} r="3.5" fill="#e11d48" />
+          <text
+            x="12"
+            y="14"
+            fontSize="9"
+            fill="currentColor"
+            className="fill-muted-foreground font-mono"
+          >
+            {shockChart.pre_label}
+          </text>
+          <text
+            x="405"
+            y="112"
+            textAnchor="end"
+            fontSize="9"
+            fill="currentColor"
+            className="fill-rose-600 dark:fill-rose-400 font-mono font-bold"
+          >
+            {shockChart.shock_label}
+          </text>
+        </svg>
+        {source && (
+          <div className="text-[10.5px] font-mono text-muted-foreground text-right">
+            Source: {source}
+          </div>
+        )}
+      </div>
+    );
   }
 
   if (conceptTag === "event_volatility_option_writing_risk") {
@@ -344,7 +433,12 @@ export default function StressTest({ sessionData, examResult, onCompleted }) {
                 </p>
               </div>
 
-              <HistoricalShockVisual conceptTag={scenario.concept_tag} />
+              <HistoricalShockVisual
+                conceptTag={scenario.concept_tag}
+                shockChart={scenario.shock_chart}
+                date={scenario.date}
+                source={scenario.source}
+              />
             </div>
 
             {/* Position Reasoning Prompt + Input */}
