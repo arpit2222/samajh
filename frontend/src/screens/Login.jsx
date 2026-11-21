@@ -161,10 +161,10 @@ export default function Login({ onAuthenticated, onGuestContinue }) {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <Badge variant="default">
-              <ShieldCheck className="h-3.5 w-3.5" /> Firebase Authentication
+              <ShieldCheck className="h-3.5 w-3.5" /> NISM &amp; F&amp;O Readiness
             </Badge>
             <Badge variant="secondary" className="text-[10.5px]">
-              {role === "employer" ? "Employer Portal" : "Trader / NISM"}
+              {role === "employer" ? "Employer Portal" : "Trader / Learner"}
             </Badge>
           </div>
           <CardTitle className="pt-1 text-xl sm:text-2xl">
@@ -172,16 +172,38 @@ export default function Login({ onAuthenticated, onGuestContinue }) {
               ? "Hire verified financial talent"
               : isSignUp
                 ? "Create your learner account"
-                : "Sign in to verify & save"}
+                : "Prove you understand the risk — in 3 minutes"}
           </CardTitle>
           <CardDescription>
             {role === "employer"
               ? "Set required NISM concepts and minimum reasoning scores to match opt-in verified candidates."
-              : "Tie your teach-back scores, stress-tests, and tamper-evident credential to your account."}
+              : "Teach back a NISM concept, face a real historical Indian market shock, and earn a verifiable credential."}
           </CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-4">
+          {role === "trader" && (
+            <div className="rounded-xl border border-emerald-200 dark:border-emerald-500/35 bg-emerald-50/75 dark:bg-emerald-500/10 p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              <div>
+                <p className="text-xs font-bold text-emerald-950 dark:text-emerald-100">
+                  Want to try first?
+                </p>
+                <p className="text-[11.5px] text-emerald-900/80 dark:text-emerald-200/80">
+                  Start 1 full verification right now — zero sign-up required.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="emerald"
+                size="sm"
+                disabled={busy}
+                onClick={onGuestContinue}
+                className="shrink-0"
+              >
+                Try Free Now <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          )}
           {/* Role Toggle: "I'm a trader" vs "I'm hiring" */}
           <div className="grid grid-cols-2 rounded-xl bg-muted p-1 border border-border">
             <button

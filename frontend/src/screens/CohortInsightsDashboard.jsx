@@ -12,11 +12,14 @@ import {
   CardTitle,
 } from "../components/ui/card.jsx";
 import { Badge } from "../components/ui/badge.jsx";
+import { Input } from "../components/ui/input.jsx";
 import { Spinner } from "../components/ui/spinner.jsx";
 import { ErrorBanner } from "../components/ui/error-banner.jsx";
 import { Progress } from "../components/ui/progress.jsx";
 
 export default function CohortInsightsDashboard({ partnerId = "default" }) {
+  const [activePartnerId, setActivePartnerId] = useState(partnerId);
+  const [partnerInput, setPartnerInput] = useState(partnerId);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -25,14 +28,14 @@ export default function CohortInsightsDashboard({ partnerId = "default" }) {
     setLoading(true);
     setError("");
     try {
-      const res = await fetchEmployerCohortInsights(partnerId);
+      const res = await fetchEmployerCohortInsights(activePartnerId);
       setData(res);
     } catch (err) {
       setError(err.message || "Could not load cohort weak-topic clusters.");
     } finally {
       setLoading(false);
     }
-  }, [partnerId]);
+  }, [activePartnerId]);
 
   useEffect(() => {
     loadInsights();
@@ -70,6 +73,26 @@ export default function CohortInsightsDashboard({ partnerId = "default" }) {
       </CardHeader>
 
       <CardContent className="space-y-4">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            const cleaned = partnerInput.trim() || "default";
+            setActivePartnerId(cleaned);
+          }}
+          className="flex items-center gap-2 flex-wrap"
+        >
+          <Input
+            type="text"
+            value={partnerInput}
+            onChange={(e) => setPartnerInput(e.target.value)}
+            placeholder="Cohort / Partner ID (e.g. default, institute_nism_1)"
+            className="max-w-xs h-9 text-xs font-mono"
+          />
+          <Button type="submit" size="sm" variant="outline" disabled={loading}>
+            Load Cohort
+          </Button>
+        </form>
+
         {loading ? (
           <div className="py-8 flex items-center justify-center">
             <Spinner size="md" label="Loading aggregate cohort clusters..." />
@@ -80,7 +103,7 @@ export default function CohortInsightsDashboard({ partnerId = "default" }) {
           <div className="rounded-xl border border-dashed border-border bg-muted/30 p-6 text-center space-y-1.5">
             <Layers className="h-6 w-6 text-muted-foreground mx-auto" />
             <p className="text-sm font-semibold text-foreground">
-              No scheduled cluster snapshot yet for cohort &ldquo;{partnerId}&rdquo;
+              No scheduled cluster snapshot yet for cohort &ldquo;{activePartnerId}&rdquo;
             </p>
             <p className="text-xs text-muted-foreground max-w-md mx-auto">
               Clusters are computed automatically by the scheduled batch job once sessions

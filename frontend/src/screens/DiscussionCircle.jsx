@@ -38,26 +38,36 @@ const SUBTOPIC_OPTIONS = [
     id: "overnight_gap_stoploss_risk",
     label: "Overnight Gap & Stop-Loss",
     hint: "Gap-down slippage & non-guaranteed SL execution",
+    starterText:
+      "A Stop-Loss Market (SL-M) order becomes a market order only once the trigger price is crossed during active market hours. It does NOT guarantee execution at the trigger price when adverse news breaks after market close and the stock gaps down below the stop at the next morning's open.",
   },
   {
     id: "circuit_breaker_margin_risk",
     label: "Circuit Breaker & MTM Margin",
     hint: "Lower circuits, illiquidity & forced broker square-offs",
+    starterText:
+      "In equity futures trading on NSE, open positions are Marked-to-Market (MTM) daily against the settlement price. During a sharp adverse move or 10% market-wide circuit-breaker halt, traders cannot exit while margin requirements spike, leading to forced broker square-offs.",
   },
   {
     id: "event_volatility_option_writing_risk",
     label: "Event Volatility & Option Writing",
     hint: "Gamma/vega spikes around binary macro events",
+    starterText:
+      "An option writer (seller) collects premium upfront but carries asymmetric downside obligation. Ahead of binary macro events like election results or budgets, implied volatility (vega) and directional gamma can expand simultaneously, multiplying option premiums and intraday margin requirements.",
   },
   {
     id: "regulatory_moratorium_liquidity_risk",
     label: "Moratorium & Liquidity Freeze",
     hint: "Collateral haircuts & counterparty risk",
+    starterText:
+      "In an extreme regulatory moratorium or solvency shock, normal daily price support and historical volatility ranges break down. Leveraged longs and traders using the affected stock as pledged margin collateral face simultaneous liquidity freezes and sharp haircuts.",
   },
   {
     id: "general_market_risk",
     label: "General Market Risk",
     hint: "Position sizing & structural volatility mechanisms",
+    starterText:
+      "During sudden volatility spikes on Indian exchanges, bid-ask spreads widen and order-book depth thins out. Leverage magnifies mark-to-market drawdowns against posted margin, so position size must be calibrated for adverse execution rather than calm-market averages.",
   },
 ];
 
@@ -264,8 +274,8 @@ export default function DiscussionCircle({
             </div>
             <div className="flex items-center justify-center gap-2.5 flex-wrap pt-1">
               {onStartPractice && (
-                <Button type="button" onClick={onStartPractice}>
-                  Start Verification Flow
+                <Button type="button" onClick={() => onStartPractice(activeMeta.starterText)}>
+                  Practice &ldquo;{activeMeta.label}&rdquo; Now
                 </Button>
               )}
               <Button type="button" variant="outline" onClick={onBack}>

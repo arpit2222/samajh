@@ -460,3 +460,8 @@ export async function fetchEmployerCohortInsights(partnerId = "default") {
   );
   return parseApiResponse(res);
 }
+
+export async function fetchMySessions() {
+  const res = await fetchWithTimeout(`${API_BASE}/api/sessions`, {}, 10_000);
+  return parseApiResponse(res);
+}

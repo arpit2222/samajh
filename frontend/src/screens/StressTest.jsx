@@ -88,15 +88,6 @@ function HistoricalShockVisual({ conceptTag, shockChart, date, source }) {
             strokeWidth="1.5"
             strokeDasharray="4 4"
           />
-          <text
-            x="12"
-            y={Math.max(12, thresholdY - 5)}
-            fontSize="9"
-            fill="currentColor"
-            className="fill-amber-600 dark:fill-amber-400 font-mono"
-          >
-            {shockChart.threshold_label}
-          </text>
           <path d={areaD} fill="url(#shockChartFill)" />
           <path
             d={pathD}
@@ -107,26 +98,17 @@ function HistoricalShockVisual({ conceptTag, shockChart, date, source }) {
             strokeLinejoin="round"
           />
           <circle cx={lastX} cy={lastY} r="3.5" fill="#e11d48" />
-          <text
-            x="12"
-            y="14"
-            fontSize="9"
-            fill="currentColor"
-            className="fill-muted-foreground font-mono"
-          >
-            {shockChart.pre_label}
-          </text>
-          <text
-            x="405"
-            y="112"
-            textAnchor="end"
-            fontSize="9"
-            fill="currentColor"
-            className="fill-rose-600 dark:fill-rose-400 font-mono font-bold"
-          >
-            {shockChart.shock_label}
-          </text>
         </svg>
+        {/* Responsive non-clipping legend pills below the SVG */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-[11px] font-mono">
+          <span className="text-muted-foreground">{shockChart.pre_label}</span>
+          <span className="text-amber-700 dark:text-amber-400">
+            --- {shockChart.threshold_label}
+          </span>
+          <span className="font-bold text-rose-600 dark:text-rose-400">
+            {shockChart.shock_label}
+          </span>
+        </div>
         {source && (
           <div className="text-[10.5px] font-mono text-muted-foreground text-right">
             Source: {source}

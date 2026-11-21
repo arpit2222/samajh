@@ -3,13 +3,11 @@
 import React, { useEffect, useState } from "react";
 import { Toaster, toast } from "sonner";
 import {
-  Database,
   AlertTriangle,
   Sun,
   Moon,
   TrendingDown,
   ShieldCheck,
-  Cpu,
   Shuffle,
   LogOut,
   UserRound,
@@ -19,6 +17,9 @@ import {
   ChevronRight,
   KeyRound,
   MessageSquareText,
+  Trophy,
+  Clock,
+  Sparkles,
 } from "lucide-react";
 import { fetchHealth, setApiUser } from "../api.js";
 import { subscribeToAuth, signOutUser } from "../lib/firebase.js";
@@ -41,6 +42,18 @@ import EmployerMatches from "../screens/EmployerMatches.jsx";
 import TraderProfiler from "../screens/TraderProfiler.jsx";
 import LeaderboardScreen from "../screens/LeaderboardScreen.jsx";
 import DiscussionCircle from "../screens/DiscussionCircle.jsx";
+import SessionHistory from "../screens/SessionHistory.jsx";
+
+const VALID_TRADER_VIEWS = new Set([
+  "flow",
+  "profiler",
+  "multi",
+  "leaderboard",
+  "discussion",
+  "credential",
+  "history",
+]);
+const SESSION_STORAGE_KEY = "samajh_active_session_v1";
 
 class DemoErrorBoundary extends React.Component {
   constructor(props) {
@@ -83,7 +96,8 @@ export default function SamajhApp() {
   const [authReady, setAuthReady] = useState(false);
   const [user, setUser] = useState(null); // { uid, displayName, email, photoURL, role: 'trader'|'employer', isGuest }
   const [step, setStep] = useState(1);
-  const [traderView, setTraderView] = useState("flow"); // "flow" | "multi" | "leaderboard" | "credential" | "profiler" | "discussion"
+  const [activeModule, setActiveModule] = useState("series-viii");
+  const [traderView, setTraderView] = useState("flow"); // "flow" | "multi" | "leaderboard" | "credential" | "profiler" | "discussion" | "history"
   const [discussionSubtopic, setDiscussionSubtopic] = useState(null);
   const [prefillCaptureText, setPrefillCaptureText] = useState("");
   const [selectedRequisition, setSelectedRequisition] = useState(null);
@@ -94,6 +108,7 @@ export default function SamajhApp() {
   const [health, setHealth] = useState(null);
   const [darkMode, setDarkMode] = useState(false);
 
+  // Restore theme, URL view query param, and active verification session on mount
   useEffect(() => {
     const saved = typeof window !== "undefined" ? localStorage.getItem("samajh_theme") : null;
     if (saved === "dark") {
@@ -104,9 +119,64 @@ export default function SamajhApp() {
       const params = new URLSearchParams(window.location.search);
       if (params.get("request_token")) {
         setTraderView("profiler");
+      } else {
+        const viewParam = params.get("view");
+        if (viewParam && VALID_TRADER_VIEWS.has(viewParam)) {
+          setTraderView(viewParam);
+        }
+      }
+
+      try {
+        const rawSession = sessionStorage.getItem(SESSION_STORAGE_KEY);
+        if (rawSession) {
+          const parsed = JSON.parse(rawSession);
+          if (parsed?.sessionData?.sessionId) {
+            setSessionData(parsed.sessionData);
+            if (parsed.examResult) setExamResult(parsed.examResult);
+            if (parsed.stressResult) setStressResult(parsed.stressResult);
+            if (parsed.activeModule) setActiveModule(parsed.activeModule);
+            if (typeof parsed.step === "number" && parsed.step >= 1 && parsed.step <= 6) {
+              setStep(parsed.step);
+            }
+          }
+        }
+      } catch {
+        // ignore storage parse failure
       }
     }
   }, []);
+
+  // Persist active verification progress across browser refresh
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      if (sessionData?.sessionId) {
+        sessionStorage.setItem(
+          SESSION_STORAGE_KEY,
+          JSON.stringify({ step, activeModule, sessionData, examResult, stressResult })
+        );
+      } else {
+        sessionStorage.removeItem(SESSION_STORAGE_KEY);
+      }
+    } catch {
+      // ignore quota errors
+    }
+  }, [step, activeModule, sessionData, examResult, stressResult]);
+
+  // Keep URL ?view= in sync with traderView (without interfering with Kite request_token)
+  useEffect(() => {
+    if (typeof window === "undefined" || !user || user.role === "employer") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("request_token")) return;
+    if (traderView === "flow") {
+      params.delete("view");
+    } else {
+      params.set("view", traderView);
+    }
+    const nextSearch = params.toString();
+    const nextUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}`;
+    window.history.replaceState({}, "", nextUrl);
+  }, [traderView, user]);
 
   useEffect(() => {
     const unsubscribe = subscribeToAuth((fbUser) => {
@@ -196,13 +266,24 @@ export default function SamajhApp() {
     setTraderView("flow");
     setSelectedRequisition(null);
     setStep(1);
+    setActiveModule("series-viii");
     setSessionData(null);
     setExamResult(null);
     setStressResult(null);
+    if (typeof window !== "undefined") {
+      try {
+        sessionStorage.removeItem(SESSION_STORAGE_KEY);
+      } catch {
+        // ignore
+      }
+    }
   }
 
-  const isGcpDb = health?.dbMode === "firestore-mongo" || health?.dbMode === "firestore-native";
   const isEmployer = user?.role === "employer";
+  const effectiveTotalSteps =
+    sessionData?.hasStressTest === false || (!sessionData && activeModule !== "series-viii")
+      ? 4
+      : 6;
 
   return (
     <div className="min-h-dvh flex flex-col">
@@ -241,7 +322,7 @@ export default function SamajhApp() {
         ) : (
           /* Post-Login Shell */
           <>
-            <header className="flex items-center justify-between gap-3 pb-5 mb-6 border-b border-border/80 flex-wrap">
+            <header className="flex items-center justify-between gap-3 pb-4 mb-4 border-b border-border/80 flex-wrap">
               <button
                 type="button"
                 onClick={handleResetJourney}
@@ -263,73 +344,7 @@ export default function SamajhApp() {
                 </div>
               </button>
 
-              <div className="flex items-center gap-2 flex-wrap">
-                {health && !health.offline && (
-                  <>
-                    {health.adkPipeline && (
-                      <Badge variant="default" className="hidden lg:inline-flex font-mono text-[11px]">
-                        <Cpu className="h-3 w-3" /> ADK 5-Agent
-                      </Badge>
-                    )}
-                    <Badge
-                      variant={isGcpDb ? "success" : "secondary"}
-                      className="hidden md:inline-flex font-mono text-[11px]"
-                    >
-                      <Database className="h-3 w-3" />
-                      {health.dbLabel || "GCP Firestore"}
-                    </Badge>
-                  </>
-                )}
-
-                {!isEmployer && (
-                  <>
-                    <Button
-                      type="button"
-                      variant={traderView === "profiler" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() =>
-                        setTraderView((v) => (v === "profiler" ? "flow" : "profiler"))
-                      }
-                    >
-                      <FileSpreadsheet className="h-3.5 w-3.5" />
-                      <span className="hidden sm:inline">Trade Review</span>
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={traderView === "credential" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() =>
-                        setTraderView((v) => (v === "credential" ? "flow" : "credential"))
-                      }
-                    >
-                      <Award className="h-3.5 w-3.5" />
-                      <span className="hidden sm:inline">Credential</span>
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={traderView === "multi" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() =>
-                        setTraderView((v) => (v === "multi" ? "flow" : "multi"))
-                      }
-                    >
-                      <Shuffle className="h-3.5 w-3.5" />
-                      <span className="hidden sm:inline">Gauntlet</span>
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={traderView === "discussion" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() =>
-                        setTraderView((v) => (v === "discussion" ? "flow" : "discussion"))
-                      }
-                    >
-                      <MessageSquareText className="h-3.5 w-3.5" />
-                      <span className="hidden sm:inline">Circles</span>
-                    </Button>
-                  </>
-                )}
-
+              <div className="flex items-center gap-2">
                 {!user.isGuest && (
                   <a href="/developer">
                     <Button type="button" variant="outline" size="sm" title="Developer API Keys & MCP">
@@ -357,7 +372,7 @@ export default function SamajhApp() {
                       )}
                     </span>
                   )}
-                  <span className="max-w-[120px] truncate">
+                  <span className="max-w-[110px] truncate">
                     {user.isGuest ? "Guest" : user.displayName}
                   </span>
                 </div>
@@ -382,6 +397,40 @@ export default function SamajhApp() {
                 </Button>
               </div>
             </header>
+
+            {/* Clean, single-row scrollable Trader Navigation Bar */}
+            {!isEmployer && (
+              <nav
+                aria-label="Trader Navigation"
+                className="mb-6 flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar"
+              >
+                {[
+                  { id: "flow", label: "Verify", icon: Sparkles },
+                  { id: "profiler", label: "Trade Review", icon: FileSpreadsheet },
+                  { id: "multi", label: "Gauntlet", icon: Shuffle },
+                  { id: "leaderboard", label: "Leaderboard", icon: Trophy },
+                  { id: "discussion", label: "Circles", icon: MessageSquareText },
+                  { id: "credential", label: "Credential", icon: Award },
+                  { id: "history", label: "History", icon: Clock },
+                ].map((tab) => {
+                  const Icon = tab.icon;
+                  const active = traderView === tab.id;
+                  return (
+                    <Button
+                      key={tab.id}
+                      type="button"
+                      size="sm"
+                      variant={active ? "default" : "ghost"}
+                      onClick={() => setTraderView(tab.id)}
+                      className="shrink-0"
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      <span>{tab.label}</span>
+                    </Button>
+                  );
+                })}
+              </nav>
+            )}
 
             {health?.offline && (
               <ErrorBanner
@@ -451,7 +500,7 @@ export default function SamajhApp() {
                     </div>
                   </div>
                 )}
-                <ProgressStepper currentStep={step} />
+                <ProgressStepper currentStep={step} totalSteps={effectiveTotalSteps} />
               </>
             )}
 
@@ -512,7 +561,23 @@ export default function SamajhApp() {
                     <DiscussionCircle
                       initialSubtopic={discussionSubtopic || stressResult?.concept_tag}
                       sessionId={sessionData?.sessionId}
-                      onStartPractice={() => setTraderView("flow")}
+                      onStartPractice={(starterText) => {
+                        if (typeof starterText === "string" && starterText.trim()) {
+                          setPrefillCaptureText(starterText);
+                        }
+                        setStep(1);
+                        setSessionData(null);
+                        setExamResult(null);
+                        setStressResult(null);
+                        setTraderView("flow");
+                      }}
+                      onBack={() => setTraderView("flow")}
+                    />
+                  ) : traderView === "history" ? (
+                    <SessionHistory
+                      user={user}
+                      onRequestSignIn={handleLogout}
+                      onStartNew={handleResetJourney}
                       onBack={() => setTraderView("flow")}
                     />
                   ) : (
@@ -520,8 +585,10 @@ export default function SamajhApp() {
                       {step === 1 && (
                         <Capture
                           initialText={prefillCaptureText}
+                          onModuleChange={(modId) => setActiveModule(modId)}
                           onIngested={(data) => {
                             setPrefillCaptureText("");
+                            setActiveModule(data.module || "series-viii");
                             setSessionData(data);
                             setExamResult(null);
                             setStressResult(null);
@@ -573,9 +640,11 @@ export default function SamajhApp() {
 
                       {step === 6 && sessionData && examResult && stressResult && (
                         <ResultScreen
+                          user={user}
                           sessionData={sessionData}
                           examResult={examResult}
                           stressResult={stressResult}
+                          onRequestSignIn={handleLogout}
                           onOpenCredential={() => setTraderView("credential")}
                           onStartMultiScenario={() => setTraderView("multi")}
                           onOpenLeaderboard={() => setTraderView("leaderboard")}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   Camera,
@@ -116,7 +116,7 @@ const SAMPLE_PASSAGES_BY_MODULE = {
   ],
 };
 
-export default function Capture({ onIngested, initialText = "" }) {
+export default function Capture({ onIngested, onModuleChange, initialText = "" }) {
   const [mode, setMode] = useState("text"); // "text" | "photo"
   const [nismModule, setNismModule] = useState("series-viii"); // default remains Series VIII
   const [language, setLanguage] = useState(() => {
@@ -125,6 +125,10 @@ export default function Capture({ onIngested, initialText = "" }) {
     return SUPPORTED_LANGUAGES.some((l) => l.code === saved) ? saved : DEFAULT_LANGUAGE_CODE;
   });
   const [text, setText] = useState(initialText);
+
+  useEffect(() => {
+    if (initialText) setText(initialText);
+  }, [initialText]);
   const [selectedSampleId, setSelectedSampleId] = useState(null);
   const [photo, setPhoto] = useState(null);
   const [preparingPhoto, setPreparingPhoto] = useState(false);
@@ -190,8 +194,8 @@ export default function Capture({ onIngested, initialText = "" }) {
           <Badge variant="default">
             <Sparkles className="h-3.5 w-3.5" /> Step 1 · Capture Study Page
           </Badge>
-          <span className="text-xs font-mono text-muted-foreground">
-            Direct Gemini Multimodal · Zero OCR
+          <span className="text-xs font-medium text-muted-foreground">
+            Takes ~2 mins · 3 quick exchanges
           </span>
         </div>
         <CardTitle className="pt-1">What financial concept are you studying?</CardTitle>
@@ -220,6 +224,7 @@ export default function Capture({ onIngested, initialText = "" }) {
                     disabled={loading}
                     onClick={() => {
                       setNismModule(mod.id);
+                      onModuleChange?.(mod.id);
                       setSelectedSampleId(null);
                       setError("");
                     }}
@@ -500,8 +505,8 @@ export default function Capture({ onIngested, initialText = "" }) {
         </CardContent>
 
         <CardFooter className="flex-col sm:flex-row items-stretch sm:items-center">
-          <div className="text-xs font-mono text-muted-foreground">
-            Pipeline: ingestAgent → conceptAgent
+          <div className="text-xs text-muted-foreground">
+            Grounded in official NISM workbooks
           </div>
           <Button type="submit" size="lg" disabled={loading || preparingPhoto}>
             {loading ? (

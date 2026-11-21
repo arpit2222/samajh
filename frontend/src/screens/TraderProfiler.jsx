@@ -735,8 +735,9 @@ export default function TraderProfiler({ onJumpToTeachBack, onBack }) {
               </div>
 
               {!kiteLoading && kiteStatus && !kiteStatus.configured && (
-                <p className="text-[11px] font-mono text-muted-foreground">
-                  Set KITE_API_KEY &amp; KITE_API_SECRET in backend/.env to enable live OAuth.
+                <p className="text-[11px] text-muted-foreground">
+                  Early Access: Live Kite OAuth activates once broker app approval is connected —
+                  use 100% private CSV upload above today.
                 </p>
               )}
             </div>
@@ -851,8 +852,9 @@ export default function TraderProfiler({ onJumpToTeachBack, onBack }) {
               )}
 
               {!angelLoading && angelStatus && !angelStatus.configured && (
-                <p className="text-[11px] font-mono text-muted-foreground">
-                  Set ANGEL_SMARTAPI_KEY in backend/.env to enable live SmartAPI sync.
+                <p className="text-[11px] text-muted-foreground">
+                  Early Access: Live SmartAPI sync activates once broker API credentials are
+                  connected — use 100% private CSV upload above today.
                 </p>
               )}
             </div>

@@ -13,11 +13,17 @@ export const JOURNEY_STEPS = [
   { id: 6, key: "result", label: "Result" },
 ];
 
-export function ProgressStepper({ currentStep = 1, className }) {
+export function ProgressStepper({ currentStep = 1, totalSteps = 6, className }) {
+  const visibleSteps = totalSteps === 4 ? JOURNEY_STEPS.slice(0, 4) : JOURNEY_STEPS;
   return (
     <nav aria-label="Samajh Verification Journey" className={cn("mb-6", className)}>
-      <ol className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-        {JOURNEY_STEPS.map((item) => {
+      <ol
+        className={cn(
+          "grid gap-2",
+          totalSteps === 4 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3 sm:grid-cols-6"
+        )}
+      >
+        {visibleSteps.map((item) => {
           const isActive = currentStep === item.id;
           const isDone = currentStep > item.id;
 

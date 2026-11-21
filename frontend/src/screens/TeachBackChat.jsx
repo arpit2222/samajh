@@ -14,6 +14,9 @@ import {
   Keyboard,
   Languages,
   Radio,
+  BookOpen,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { toast } from "sonner";
 import { sendTeachBack, examineSession } from "../api.js";
@@ -50,6 +53,29 @@ function TypingDots() {
 
 export default function TeachBackChat({ sessionData, onExamined }) {
   const langConfig = getLanguageConfig(sessionData?.language);
+  const isHindi = langConfig.code === "hi-IN";
+  const uiCopy = isHindi
+    ? {
+        title: "नौसिखिए की गलती सुधारें",
+        subtitle:
+          "समझाएं कि उसने क्या गलत समझा और असली तंत्र कैसे काम करता है। परीक्षक केवल आपके उत्तरों का मूल्यांकन करता है।",
+        userLabel: "आपका उत्तर",
+        agentLabel: "नौसिखिया",
+        sendLabel: "भेजें",
+        switchToTyping: "टाइपिंग पर जाएं",
+      }
+    : {
+        title: "Correct the confused novice",
+        subtitle:
+          "Spot the flaw in their restatement and explain why in plain language. Switch between Live voice and typing anytime without losing progress.",
+        userLabel: "Your Explanation",
+        agentLabel: "Confused Novice",
+        sendLabel: "Send",
+        switchToTyping: "Switch to Typing",
+      };
+
+  const [showConceptRef, setShowConceptRef] = useState(false);
+  const [micLevel, setMicLevel] = useState(0);
   const [turns, setTurns] = useState([]);
   const [agentTurns, setAgentTurns] = useState(0);
   const [done, setDone] = useState(false);
@@ -87,6 +113,7 @@ export default function TeachBackChat({ sessionData, onExamined }) {
     }
     micHandleRef.current = null;
     setMicActive(false);
+    setMicLevel(0);
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: "audio_end" }));
     }
@@ -262,6 +289,7 @@ export default function TeachBackChat({ sessionData, onExamined }) {
     }
     try {
       const handle = await startPcmMicCapture({
+        onLevel: (lvl) => setMicLevel(lvl),
         onPcmChunk: (base64Pcm) => {
           if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
             wsRef.current.send(
@@ -386,7 +414,7 @@ export default function TeachBackChat({ sessionData, onExamined }) {
               >
                 {inputMode === "voice" ? (
                   <>
-                    <Keyboard className="h-3.5 w-3.5" /> Switch to Typing
+                    <Keyboard className="h-3.5 w-3.5" /> {uiCopy.switchToTyping}
                   </>
                 ) : (
                   <>
@@ -402,12 +430,35 @@ export default function TeachBackChat({ sessionData, onExamined }) {
             </Badge>
           </div>
         </div>
-        <CardTitle className="pt-1">Correct the confused novice</CardTitle>
-        <CardDescription>
-          Spot the flaw in their restatement and explain{" "}
-          <strong className="text-foreground">why</strong> in plain language. Use real-time Gemini
-          Live voice or type below — you can switch to typing anytime without losing progress.
-        </CardDescription>
+        <CardTitle className="pt-1">{uiCopy.title}</CardTitle>
+        <CardDescription>{uiCopy.subtitle}</CardDescription>
+
+        {/* Collapsible Concept Reminder so learner can glance back without resetting */}
+        {sessionData?.concept && (
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={() => setShowConceptRef((v) => !v)}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-700 dark:text-brand-300 hover:underline cursor-pointer"
+            >
+              <BookOpen className="h-3.5 w-3.5" />
+              {showConceptRef ? "Hide Concept Reference" : "Review Concept Card"}
+              {showConceptRef ? (
+                <ChevronUp className="h-3.5 w-3.5" />
+              ) : (
+                <ChevronDown className="h-3.5 w-3.5" />
+              )}
+            </button>
+            {showConceptRef && (
+              <div className="mt-2 rounded-xl border border-border bg-muted/45 p-3.5 text-xs space-y-1.5">
+                <p className="font-semibold text-foreground">{sessionData.concept}</p>
+                {sessionData.analogy && (
+                  <p className="text-muted-foreground leading-relaxed">{sessionData.analogy}</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="pt-3 space-y-1.5">
           <div className="flex justify-between text-xs text-muted-foreground font-medium">
@@ -460,7 +511,7 @@ export default function TeachBackChat({ sessionData, onExamined }) {
                       isUser ? "text-blue-100/90" : "text-muted-foreground"
                     }`}
                   >
-                    {isUser ? "Your Explanation" : "Confused Novice"}
+                    {isUser ? uiCopy.userLabel : uiCopy.agentLabel}
                   </div>
                   <p className="whitespace-pre-wrap">{turn.text}</p>
                 </div>
@@ -531,11 +582,22 @@ export default function TeachBackChat({ sessionData, onExamined }) {
                       </>
                     )}
                   </Button>
+                  {micActive && (
+                    <div className="flex items-center gap-1.5" aria-label="Live microphone level">
+                      <span className="h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
+                      <div className="w-20 h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                        <div
+                          className="h-full bg-emerald-500 transition-all duration-75"
+                          style={{ width: `${Math.max(8, micLevel)}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
                   <span className="text-xs text-muted-foreground">
                     {liveStatus === "connecting"
                       ? "Opening persistent Gemini Live WebSocket..."
                       : micActive
-                        ? "Streaming 16kHz PCM audio live — click Finish Speaking when done."
+                        ? "Live mic active — click Finish Speaking when done."
                         : "Connected to Gemini Live (24kHz audio playback ready)."}
                   </span>
                 </div>
@@ -548,7 +610,7 @@ export default function TeachBackChat({ sessionData, onExamined }) {
                     setInputMode("typing");
                   }}
                 >
-                  <Keyboard className="h-3.5 w-3.5" /> Switch to Typing
+                  <Keyboard className="h-3.5 w-3.5" /> {uiCopy.switchToTyping}
                 </Button>
               </div>
             )}
@@ -569,7 +631,7 @@ export default function TeachBackChat({ sessionData, onExamined }) {
                 className="sm:h-12 shrink-0"
                 disabled={sending || initializing || !userText.trim() || turns.length === 0}
               >
-                <Send className="h-4 w-4" /> Send
+                <Send className="h-4 w-4" /> {uiCopy.sendLabel}
               </Button>
             </div>
           </form>

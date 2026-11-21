@@ -58,9 +58,11 @@ function getMasteryVerdict(score) {
 }
 
 export default function ResultScreen({
+  user,
   sessionData,
   examResult,
   stressResult,
+  onRequestSignIn,
   onStartMultiScenario,
   onOpenLeaderboard,
   onOpenDiscussion,
@@ -272,6 +274,93 @@ export default function ResultScreen({
             </p>
           </div>
         )}
+
+        {/* Contextual Guest Nudge */}
+        {user?.isGuest && onRequestSignIn && (
+          <div className="rounded-2xl border border-brand-200 dark:border-brand-500/35 bg-brand-50/70 dark:bg-brand-500/10 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="space-y-0.5">
+              <p className="text-sm font-bold text-foreground">
+                Save this {combinedScore}/100 score to your Verified Credential
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Guest sessions are temporary. Sign in with Google or Email to build a permanent
+                tamper-evident NISM understanding profile.
+              </p>
+            </div>
+            <Button type="button" size="sm" onClick={onRequestSignIn} className="shrink-0">
+              Sign In to Save
+            </Button>
+          </div>
+        )}
+
+        {/* Clean "What's Next" 2-column action grid instead of 6 competing footer buttons */}
+        <div className="space-y-2.5 pt-1">
+          <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            What&apos;s Next
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {onOpenCredential && (
+              <button
+                type="button"
+                onClick={onOpenCredential}
+                className="text-left rounded-xl border border-border bg-card hover:bg-muted/50 p-3.5 flex items-center gap-3 transition-colors cursor-pointer"
+              >
+                <span className="h-9 w-9 rounded-lg bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                  <ShieldCheck className="h-4 w-4" />
+                </span>
+                <div>
+                  <p className="text-sm font-bold text-foreground">My Verified Credential</p>
+                  <p className="text-xs text-muted-foreground">View &amp; share your HMAC-signed profile</p>
+                </div>
+              </button>
+            )}
+            {onStartMultiScenario && (
+              <button
+                type="button"
+                onClick={onStartMultiScenario}
+                className="text-left rounded-xl border border-border bg-card hover:bg-muted/50 p-3.5 flex items-center gap-3 transition-colors cursor-pointer"
+              >
+                <span className="h-9 w-9 rounded-lg bg-brand-50 dark:bg-brand-500/15 text-brand-600 dark:text-brand-400 flex items-center justify-center shrink-0">
+                  <Shuffle className="h-4 w-4" />
+                </span>
+                <div>
+                  <p className="text-sm font-bold text-foreground">Multi-Scenario Gauntlet</p>
+                  <p className="text-xs text-muted-foreground">Test yourself across multiple market shocks</p>
+                </div>
+              </button>
+            )}
+            {onOpenLeaderboard && (
+              <button
+                type="button"
+                onClick={onOpenLeaderboard}
+                className="text-left rounded-xl border border-border bg-card hover:bg-muted/50 p-3.5 flex items-center gap-3 transition-colors cursor-pointer"
+              >
+                <span className="h-9 w-9 rounded-lg bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                  <Trophy className="h-4 w-4" />
+                </span>
+                <div>
+                  <p className="text-sm font-bold text-foreground">Comprehension Leaderboard</p>
+                  <p className="text-xs text-muted-foreground">Compare scores anonymously or opt in</p>
+                </div>
+              </button>
+            )}
+            {onOpenDiscussion && (
+              <button
+                type="button"
+                onClick={() => onOpenDiscussion(stressResult?.concept_tag)}
+                className="text-left rounded-xl border border-border bg-card hover:bg-muted/50 p-3.5 flex items-center gap-3 transition-colors cursor-pointer"
+              >
+                <span className="h-9 w-9 rounded-lg bg-indigo-50 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                  <MessageSquareText className="h-4 w-4" />
+                </span>
+                <div>
+                  <p className="text-sm font-bold text-foreground">Discussion Circle</p>
+                  <p className="text-xs text-muted-foreground">Swap pattern notes on this exact gap</p>
+                </div>
+              </button>
+            )}
+          </div>
+        </div>
       </CardContent>
 
       <CardFooter className="flex-col-reverse sm:flex-row items-stretch sm:items-center">
@@ -284,34 +373,10 @@ export default function ResultScreen({
           <span>Full 6-step verification recorded</span>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-col sm:flex-row flex-wrap">
+        <div className="flex items-center gap-2.5 flex-col sm:flex-row">
           <Button type="button" variant="outline" onClick={handleCopySummary}>
             <Copy className="h-4 w-4" /> Copy Summary
           </Button>
-          {onOpenCredential && (
-            <Button type="button" variant="emerald" onClick={onOpenCredential}>
-              <ShieldCheck className="h-4 w-4" /> My Verified Credential
-            </Button>
-          )}
-          {onStartMultiScenario && (
-            <Button type="button" variant="secondary" onClick={onStartMultiScenario}>
-              <Shuffle className="h-4 w-4" /> Multi-Scenario Gauntlet
-            </Button>
-          )}
-          {onOpenLeaderboard && (
-            <Button type="button" variant="outline" onClick={onOpenLeaderboard}>
-              <Trophy className="h-4 w-4" /> View Leaderboard
-            </Button>
-          )}
-          {onOpenDiscussion && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenDiscussion(stressResult?.concept_tag)}
-            >
-              <MessageSquareText className="h-4 w-4" /> Discussion Circle
-            </Button>
-          )}
           <Button type="button" size="lg" onClick={onReset}>
             <RotateCcw className="h-4 w-4" /> Verify Another Concept
           </Button>

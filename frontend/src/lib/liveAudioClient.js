@@ -47,7 +47,7 @@ function base64ToFloat32Pcm(base64) {
 /**
  * Captures mono microphone audio, downsamples to 16kHz 16-bit PCM, and emits base64 chunks.
  */
-export async function startPcmMicCapture({ onPcmChunk }) {
+export async function startPcmMicCapture({ onPcmChunk, onLevel }) {
   if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
     throw new Error("Microphone capture is not supported in this browser.");
   }
@@ -68,6 +68,12 @@ export async function startPcmMicCapture({ onPcmChunk }) {
 
   processor.onaudioprocess = (event) => {
     const input = event.inputBuffer.getChannelData(0);
+    if (typeof onLevel === "function") {
+      let sum = 0;
+      for (let i = 0; i < input.length; i++) sum += input[i] * input[i];
+      const rms = Math.sqrt(sum / input.length);
+      onLevel(Math.min(100, Math.round(rms * 350)));
+    }
     const pcm16 = downsampleTo16kPcm(input, audioCtx.sampleRate);
     onPcmChunk(int16ToBase64(pcm16));
   };
