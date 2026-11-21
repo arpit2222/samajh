@@ -42,7 +42,7 @@ export async function callGeminiJSON({
   timeoutMs = DEFAULT_TIMEOUT_MS,
 }) {
   const apiKey = getApiKey();
-  const isVertexExpressKey = apiKey.startsWith("AQ.");
+  const isVertexExpressKey = false;
   const url = isVertexExpressKey
     ? `${VERTEX_EXPRESS_BASE}/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`
     : `${GEMINI_REST_BASE}/${encodeURIComponent(model)}:generateContent`;
